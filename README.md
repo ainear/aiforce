@@ -133,6 +133,7 @@ flutter build apk --release
 | **📍 [START_HERE.md](START_HERE.md)** | **Start here** - Quick overview |
 | [FINAL_CHECKLIST.md](FINAL_CHECKLIST.md) | Ready to push GitHub checklist ✅ |
 | [GITHUB_AND_LOCAL_BUILD.md](GITHUB_AND_LOCAL_BUILD.md) | Push to GitHub & build APK locally |
+| [CODE_FIXES_SUMMARY.md](CODE_FIXES_SUMMARY.md) | Code fixes: CardTheme, ClipRRect, AGP 🔧 |
 | [ANDROID_BUILD_FIX.md](ANDROID_BUILD_FIX.md) | Fix Android v1 embedding error 🔧 |
 | [HOW_TO_RUN_FLUTTER_APP.md](HOW_TO_RUN_FLUTTER_APP.md) | Detailed Flutter app setup |
 | [FLUTTER_APP_SUMMARY.md](FLUTTER_APP_SUMMARY.md) | Complete Flutter app summary |
