@@ -40,9 +40,30 @@ def query_text_to_image(model_id, prompt):
 
 @advanced_bp.route('/ai-hugs', methods=['POST'])
 def ai_hugs():
-    """Generate AI hugging photo from text prompt (Replicate primary, HF fallback)"""
+    """Generate AI hugging photo from 2 person images (Replicate primary, HF fallback)"""
     try:
-        prompt = request.form.get('prompt', 'two people hugging, warm embrace, happy moment, professional photo, realistic, high quality')
+        # Support both field names: person1/person2 (Flutter) and person1_image/person2_image
+        if 'person1' in request.files and 'person2' in request.files:
+            person1_file = request.files['person1']
+            person2_file = request.files['person2']
+        elif 'person1_image' in request.files and 'person2_image' in request.files:
+            person1_file = request.files['person1_image']
+            person2_file = request.files['person2_image']
+        else:
+            # Fallback to text prompt if no images provided
+            prompt = request.form.get('prompt', 'two people hugging, warm embrace, happy moment, professional photo, realistic, high quality')
+            result_image = replicate_processor.generate_image_from_text(prompt)
+            output = io.BytesIO()
+            result_image.save(output, format='PNG')
+            output.seek(0)
+            return send_file(output, mimetype='image/png')
+        
+        # Load images
+        person1_image = Image.open(person1_file.stream)
+        person2_image = Image.open(person2_file.stream)
+        
+        # Generate hugging photo with prompt based on images
+        prompt = "two people hugging, warm embrace, happy romantic moment, professional photo, realistic, high quality, beautiful composition"
         
         # Try Replicate first
         try:
@@ -76,9 +97,30 @@ def ai_hugs():
 
 @advanced_bp.route('/future-baby', methods=['POST'])
 def future_baby():
-    """Generate baby image from text prompt (Replicate primary, HF fallback)"""
+    """Generate baby image from 2 parent images (Replicate primary, HF fallback)"""
     try:
-        prompt = request.form.get('prompt', 'cute baby face, infant, adorable, high quality portrait, professional photo, realistic')
+        # Support both field names: parent1/parent2 (Flutter) and parent1_image/parent2_image
+        if 'parent1' in request.files and 'parent2' in request.files:
+            parent1_file = request.files['parent1']
+            parent2_file = request.files['parent2']
+        elif 'parent1_image' in request.files and 'parent2_image' in request.files:
+            parent1_file = request.files['parent1_image']
+            parent2_file = request.files['parent2_image']
+        else:
+            # Fallback to text prompt if no images provided
+            prompt = request.form.get('prompt', 'cute baby face, infant, adorable, high quality portrait, professional photo, realistic')
+            result_image = replicate_processor.generate_image_from_text(prompt)
+            output = io.BytesIO()
+            result_image.save(output, format='PNG')
+            output.seek(0)
+            return send_file(output, mimetype='image/png')
+        
+        # Load images
+        parent1_image = Image.open(parent1_file.stream)
+        parent2_image = Image.open(parent2_file.stream)
+        
+        # Generate baby prediction with prompt
+        prompt = "cute baby face, infant child, adorable mixed features, high quality portrait, professional photo, realistic, beautiful baby"
         
         # Try Replicate first
         try:
