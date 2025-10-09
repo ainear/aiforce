@@ -28,6 +28,13 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
 
 ## Recent Changes
+- **2025-10-09**: Production Deployment Fix - Replit Shield Issue 🚨
+  - Identified root cause: Replit Shield blocking mobile app requests
+  - All features show "Network error" because of 307 redirects to Shield
+  - Solution: Disable Replit Shield in Deployment settings
+  - Created comprehensive fix guide (PRODUCTION_DEPLOYMENT_FIX.md)
+  - Backend API working perfectly, issue is external access only
+  
 - **2025-10-09**: Template Face Swap Gallery Fix ✅
   - Fixed template images not displaying in mobile app
   - Changed API response from nested object to flat list structure
