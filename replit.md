@@ -28,6 +28,14 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
 
 ## Recent Changes
+- **2025-10-09**: Flutter App URL Update & Ready for Build ✅
+  - Updated Flutter app API URL to Dev URL (bypasses Replit Shield)
+  - New URL: `https://50114ea0-2452-46e2-9975-2bc7787870fc-00-1ggmf7wilwgae.pike.replit.dev`
+  - Verified all endpoints working correctly
+  - Created FLUTTER_APP_UPDATE_SUMMARY.md with build instructions
+  - App ready to build APK in VS Code local
+  - All 7 working features accessible from mobile app
+  
 - **2025-10-09**: Model Fixes & Error Handling ✅
   - Fixed Cartoonify: Now uses SDXL with cartoon-specific prompts (working!)
   - Fixed unavailable features: Face Swap, Template Face Swap, Depth Map, Colorize return 503 with helpful error messages
