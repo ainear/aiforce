@@ -28,6 +28,15 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
 
 ## Recent Changes
+- **2025-10-09**: Flutter App Cleaned - 8 Features Only ✅
+  - Xóa 5 features không hoạt động (Face Swap, Depth Map, Colorize, Template Styles, Muscle Enhance)
+  - Giữ lại 8 features hoạt động 100%: HD Upscale, Restore, Cartoonify, Style Transfer, AI Hugs, Future Baby, Remove BG, Template Swap
+  - Sửa Template Face Swap với UI carousel đẹp (giống Ghostface)
+  - PageView carousel với dots indicator
+  - Modern UI với nút "+" để upload ảnh
+  - Code clean, không còn LSP errors
+  - Created FLUTTER_APP_CLEANED.md với hướng dẫn đầy đủ
+  
 - **2025-10-09**: Flutter App URL Update & Ready for Build ✅
   - Updated Flutter app API URL to Dev URL (bypasses Replit Shield)
   - New URL: `https://50114ea0-2452-46e2-9975-2bc7787870fc-00-1ggmf7wilwgae.pike.replit.dev`
