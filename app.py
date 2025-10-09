@@ -116,33 +116,34 @@ def api_info():
 def health():
     return jsonify({'status': 'healthy', 'service': 'AI Photo API'})
 
-@app.route('/api/templates/list')
+@app.route('/api/templates/list', methods=['GET'])
 def list_templates():
     """List all available face swap templates"""
     try:
-        templates = {
-            'female': [],
-            'male': [],
-            'mixed': []
-        }
+        # Get base URL from request or use production URL
+        base_url = request.host_url.rstrip('/')
+        
+        all_templates = []
         
         for category in ['female', 'male', 'mixed']:
             folder_path = os.path.join('static', 'templates', category)
             if os.path.exists(folder_path):
                 for filename in os.listdir(folder_path):
                     if filename.endswith(('.jpg', '.jpeg', '.png')):
-                        templates[category].append({
-                            'id': f"{category}_{filename.replace('.jpg', '').replace('.jpeg', '').replace('.png', '')}",
-                            'name': filename.replace('_', ' ').replace('.jpg', '').replace('.jpeg', '').replace('.png', '').title(),
-                            'url': f'/templates/{category}/{filename}',
-                            'category': category
+                        # Clean filename for ID
+                        clean_name = filename.replace('.jpg', '').replace('.jpeg', '').replace('.png', '')
+                        all_templates.append({
+                            'id': f"{category}_{clean_name}",
+                            'name': clean_name.replace('_', ' ').replace('-', ' ').title(),
+                            'imageUrl': f'{base_url}/static/templates/{category}/{filename}',
+                            'category': category.capitalize()
                         })
         
         return jsonify({
             'status': 'success',
-            'templates': templates,
-            'total': sum(len(templates[cat]) for cat in templates)
-        })
+            'templates': all_templates,
+            'total': len(all_templates)
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -150,8 +151,13 @@ def list_templates():
 def template_face_swap():
     """Face swap user's face with template image"""
     try:
-        if 'face_image' not in request.files:
-            return jsonify({'error': 'No face image provided'}), 400
+        # Support both 'face_image' and 'user_image' for flexibility
+        if 'face_image' not in request.files and 'user_image' not in request.files:
+            return jsonify({'error': 'No face/user image provided'}), 400
+        
+        face_file = request.files.get('face_image') or request.files.get('user_image')
+        if not face_file:
+            return jsonify({'error': 'Invalid face/user image'}), 400
         
         template_id = request.form.get('template_id')
         if not template_id:
@@ -174,7 +180,6 @@ def template_face_swap():
                     return jsonify({'error': 'Template not found'}), 404
         
         # Load images
-        face_file = request.files['face_image']
         face_image = Image.open(face_file.stream)
         template_image = Image.open(template_path)
         

@@ -131,12 +131,14 @@ flutter build apk --release
 | File | Description |
 |------|-------------|
 | **📍 [START_HERE.md](START_HERE.md)** | **Start here** - Quick overview |
+| **🎯 [ALL_FEATURES_STATUS.md](ALL_FEATURES_STATUS.md)** | **Complete features status** (11/11 ✅) |
 | [FINAL_CHECKLIST.md](FINAL_CHECKLIST.md) | Ready to push GitHub checklist ✅ |
 | [GITHUB_AND_LOCAL_BUILD.md](GITHUB_AND_LOCAL_BUILD.md) | Push to GitHub & build APK locally |
 | [CODE_FIXES_SUMMARY.md](CODE_FIXES_SUMMARY.md) | Code fixes: CardTheme, ClipRRect, AGP 🔧 |
 | [GRADLE_FIX.md](GRADLE_FIX.md) | Fix Gradle 8.3 → 8.4 version error 🔧 |
 | [ANDROID_RESOURCES_FIX.md](ANDROID_RESOURCES_FIX.md) | Fix missing Android resources 🔧 |
 | [MOBILE_APP_FIX.md](MOBILE_APP_FIX.md) | Fix 307 redirect & network errors 🔧 |
+| [TEMPLATE_FACE_SWAP_FIX.md](TEMPLATE_FACE_SWAP_FIX.md) | Fix template gallery display 🔧 |
 | [ANDROID_BUILD_FIX.md](ANDROID_BUILD_FIX.md) | Fix Android v1 embedding error 🔧 |
 | [HOW_TO_RUN_FLUTTER_APP.md](HOW_TO_RUN_FLUTTER_APP.md) | Detailed Flutter app setup |
 | [FLUTTER_APP_SUMMARY.md](FLUTTER_APP_SUMMARY.md) | Complete Flutter app summary |

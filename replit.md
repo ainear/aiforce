@@ -28,6 +28,14 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
 
 ## Recent Changes
+- **2025-10-09**: Template Face Swap Gallery Fix ✅
+  - Fixed template images not displaying in mobile app
+  - Changed API response from nested object to flat list structure
+  - Added full image URLs with base_url for CachedNetworkImage
+  - Enhanced TemplateModel parser to support multiple field names
+  - API now returns 15 templates (9 female, 3 male, 3 mixed)
+  - Template gallery fully functional with category filters
+  
 - **2025-10-09**: Mobile App API Fixes Complete ✅
   - Fixed 307 redirect errors and network issues
   - Switched backend from Dev mode to Gunicorn production server
