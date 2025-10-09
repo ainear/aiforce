@@ -9,6 +9,7 @@ import tempfile
 from dotenv import load_dotenv
 from routes.advanced_features import advanced_bp
 from utils.replicate_processor import ReplicateProcessor
+from utils.supabase_storage import SupabaseStorage
 
 load_dotenv()
 
@@ -383,6 +384,79 @@ def style_transfer():
         output.seek(0)
         return send_file(output, mimetype='image/png')
             
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai/process-and-save', methods=['POST'])
+def process_and_save():
+    """
+    Universal endpoint: Process image with AI and optionally save to Supabase
+    
+    Parameters:
+    - image (file): Image to process
+    - feature (form): AI feature to use (hd-upscale, face-swap, cartoonify, etc.)
+    - save_storage (form): 'true' to save to Supabase
+    - user_id (form): Optional user ID for organizing files
+    - scale (form): For HD upscale (2 or 4)
+    - style (form): For cartoonify/style-transfer
+    """
+    try:
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image file provided'}), 400
+        
+        file = request.files['image']
+        feature = request.form.get('feature', 'hd-upscale')
+        save_to_storage = request.form.get('save_storage', 'false').lower() == 'true'
+        user_id = request.form.get('user_id', None)
+        
+        image = Image.open(file.stream)
+        result_image = None
+        
+        # Process based on feature type
+        if feature == 'hd-upscale':
+            scale = int(request.form.get('scale', '2'))
+            result_image = replicate_processor.upscale_image(image, scale=scale)
+        
+        elif feature == 'cartoonify':
+            style = request.form.get('style', 'anime')
+            result_image = replicate_processor.cartoonify(image, style=style)
+        
+        elif feature == 'restore':
+            result_image = replicate_processor.restore_photo(image)
+        
+        elif feature == 'remove-bg':
+            result_image = replicate_processor.remove_background(image)
+        
+        else:
+            return jsonify({'error': f'Unknown feature: {feature}'}), 400
+        
+        # Save to Supabase if requested
+        if save_to_storage:
+            storage = SupabaseStorage()
+            upload_result = storage.upload_image(result_image, user_id, feature)
+            
+            if upload_result['success']:
+                return jsonify({
+                    'success': True,
+                    'message': 'Image processed and saved to Supabase',
+                    'storage_url': upload_result['url'],
+                    'filename': upload_result['filename'],
+                    'path': upload_result['path'],
+                    'feature': feature
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Storage upload failed',
+                    'details': upload_result.get('error')
+                }), 500
+        
+        # Return image bytes if not saving to storage
+        output = io.BytesIO()
+        result_image.save(output, format='PNG')
+        output.seek(0)
+        return send_file(output, mimetype='image/png')
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
