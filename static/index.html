@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Photo Editor - API Testing</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 AI Photo Editor - API Testing</h1>
+            <p>Test all AI photo editing features</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('basic')">Basic Features</button>
+            <button class="tab-btn" onclick="switchTab('advanced')">Advanced Features</button>
+            <button class="tab-btn" onclick="switchTab('templates')">Template Face Swap</button>
+        </div>
+
+        <div id="basic" class="tab-content active">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>📸 HD Upscale</h3>
+                    <input type="file" id="hd-upscale-image" accept="image/*">
+                    <select id="hd-scale">
+                        <option value="2">2x Scale</option>
+                        <option value="4">4x Scale</option>
+                    </select>
+                    <button onclick="processImage('hd-upscale', '/api/ai/hd-image')">Upscale Image</button>
+                    <div id="hd-upscale-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🔧 Fix Old Photo</h3>
+                    <input type="file" id="restore-image" accept="image/*">
+                    <button onclick="processImage('restore', '/api/ai/fix-old-photo')">Restore Photo</button>
+                    <div id="restore-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🎭 Cartoonify</h3>
+                    <input type="file" id="cartoon-image" accept="image/*">
+                    <select id="cartoon-style">
+                        <option value="anime">Anime</option>
+                        <option value="cartoon">Cartoon</option>
+                    </select>
+                    <button onclick="processImage('cartoon', '/api/ai/cartoonify')">Make Cartoon</button>
+                    <div id="cartoon-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🎨 Style Transfer</h3>
+                    <input type="file" id="style-image" accept="image/*">
+                    <select id="art-style">
+                        <option value="oil_painting">Oil Painting</option>
+                        <option value="watercolor">Watercolor</option>
+                        <option value="sketch">Sketch</option>
+                    </select>
+                    <button onclick="processImage('style', '/api/ai/style-transfer')">Apply Style</button>
+                    <div id="style-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>👥 Face Swap</h3>
+                    <input type="file" id="face-source" accept="image/*" placeholder="Source face">
+                    <input type="file" id="face-target" accept="image/*" placeholder="Target image">
+                    <button onclick="processFaceSwap()">Swap Faces</button>
+                    <div id="faceswap-result" class="result"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="advanced" class="tab-content">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🤗 AI Hugs</h3>
+                    <input type="text" id="hugs-prompt" placeholder="Enter prompt (optional)">
+                    <button onclick="processTextToImage('hugs', '/api/advanced/ai-hugs')">Generate Hugs</button>
+                    <div id="hugs-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>👶 Future Baby</h3>
+                    <input type="text" id="baby-prompt" placeholder="Enter prompt (optional)">
+                    <button onclick="processTextToImage('baby', '/api/advanced/future-baby')">Generate Baby</button>
+                    <div id="baby-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🎭 Templates</h3>
+                    <select id="template-type">
+                        <option value="ghostface">Ghostface</option>
+                        <option value="fashion">Fashion Model</option>
+                        <option value="graduate">Graduate</option>
+                        <option value="lovers">Romantic Couple</option>
+                        <option value="bikini">Beach Photo</option>
+                        <option value="dating">Dating Profile</option>
+                        <option value="profile">Professional Profile</option>
+                    </select>
+                    <button onclick="processTemplate()">Generate Template</button>
+                    <div id="template-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>💪 Muscle Enhance</h3>
+                    <input type="text" id="muscle-prompt" placeholder="Enter prompt (optional)">
+                    <button onclick="processTextToImage('muscle', '/api/advanced/muscle-enhance')">Generate Muscular</button>
+                    <div id="muscle-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🖼️ Remove Background</h3>
+                    <input type="file" id="bg-remove-image" accept="image/*">
+                    <button onclick="processImage('bg-remove', '/api/advanced/remove-background')">Remove BG</button>
+                    <div id="bg-remove-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📊 Depth Map</h3>
+                    <input type="file" id="depth-image" accept="image/*">
+                    <button onclick="processImage('depth', '/api/advanced/depth-map')">Generate Depth</button>
+                    <div id="depth-result" class="result"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🎨 Colorize B&W</h3>
+                    <input type="file" id="colorize-image" accept="image/*">
+                    <button onclick="processImage('colorize', '/api/advanced/colorize')">Colorize</button>
+                    <div id="colorize-result" class="result"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="templates" class="tab-content">
+            <div class="template-section">
+                <div class="template-upload">
+                    <h3>1️⃣ Select Template</h3>
+                    <div id="template-gallery" class="template-gallery">
+                        <p>Loading templates...</p>
+                    </div>
+                </div>
+                
+                <div class="face-upload-section">
+                    <h3>2️⃣ Upload Your Face</h3>
+                    <input type="file" id="template-face-image" accept="image/*">
+                    <div id="face-preview" class="preview-box"></div>
+                </div>
+                
+                <div class="swap-section">
+                    <h3>3️⃣ Swap Face</h3>
+                    <button id="swap-btn" onclick="swapFaceWithTemplate()" disabled>Swap Face</button>
+                    <div id="template-swap-result" class="result"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing... This may take 5-30 seconds</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
