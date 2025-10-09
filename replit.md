@@ -28,6 +28,14 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
 
 ## Recent Changes
+- **2025-10-09**: Mobile App API Fixes Complete ✅
+  - Fixed 307 redirect errors and network issues
+  - Switched backend from Dev mode to Gunicorn production server
+  - Enhanced CORS configuration for mobile app compatibility
+  - Updated Flutter Dio client with followRedirects and proper headers
+  - Added API logging interceptor for debugging
+  - All mobile features now working correctly
+  
 - **2025-10-09**: Android Build Fixes Complete ✅
   - Fixed 5 critical build errors for APK compilation
   - Created complete Android resources structure
@@ -36,7 +44,7 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
   - Created launch_background.xml drawables
   - All Flutter code errors fixed (CardTheme, ClipRRect)
   - Upgraded AGP to 8.3.0 and Gradle to 8.4
-  - Ready for APK build on local machine
+  - APK build successful on local machine
   
 - **2025-10-09**: Deployment Health Check Fix ✅
   - Added `/healthz` and `/health` endpoints for production health checks

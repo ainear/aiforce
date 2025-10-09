@@ -14,7 +14,17 @@ from utils.supabase_storage import SupabaseStorage
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+
+# Configure CORS for production - allow all origins for mobile apps
+CORS(app, 
+     resources={r"/api/*": {
+         "origins": "*",
+         "methods": ["GET", "POST", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Accept", "User-Agent"],
+         "expose_headers": ["Content-Type"],
+         "supports_credentials": False,
+         "max_age": 3600
+     }})
 
 app.register_blueprint(advanced_bp, url_prefix='/api/advanced')
 
