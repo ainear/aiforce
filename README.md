@@ -85,9 +85,11 @@ https://aiforce-onenearcelo.replit.app
 
 **Local Development:**
 ```bash
-# Clone repo
+# Clone repo (hoặc pull nếu đã có)
 git clone https://github.com/YOUR_USERNAME/imageforge-ai-photo-editor.git
 cd imageforge-ai-photo-editor
+
+# Nếu lỗi Android build, xem: ANDROID_BUILD_FIX.md
 
 # Install dependencies
 pip install -r requirements.txt
@@ -107,15 +109,19 @@ python app.py
 # Navigate to Flutter app
 cd flutter_app
 
-# Install dependencies
+# Clean & install dependencies
+flutter clean
 flutter pub get
 
 # Run on device/emulator
 flutter run
 
-# Build APK
+# Build APK (Android)
 flutter build apk --release
 # Output: build/app/outputs/flutter-apk/app-release.apk
+
+# ⚠️ Nếu lỗi "Android v1 embedding", đã fix sẵn!
+# Xem: ANDROID_BUILD_FIX.md
 ```
 
 ---
@@ -125,7 +131,9 @@ flutter build apk --release
 | File | Description |
 |------|-------------|
 | **📍 [START_HERE.md](START_HERE.md)** | **Start here** - Quick overview |
+| [FINAL_CHECKLIST.md](FINAL_CHECKLIST.md) | Ready to push GitHub checklist ✅ |
 | [GITHUB_AND_LOCAL_BUILD.md](GITHUB_AND_LOCAL_BUILD.md) | Push to GitHub & build APK locally |
+| [ANDROID_BUILD_FIX.md](ANDROID_BUILD_FIX.md) | Fix Android v1 embedding error 🔧 |
 | [HOW_TO_RUN_FLUTTER_APP.md](HOW_TO_RUN_FLUTTER_APP.md) | Detailed Flutter app setup |
 | [FLUTTER_APP_SUMMARY.md](FLUTTER_APP_SUMMARY.md) | Complete Flutter app summary |
 | [API_INTEGRATION.md](API_INTEGRATION.md) | Backend API documentation |
