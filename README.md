@@ -135,6 +135,7 @@ flutter build apk --release
 | [GITHUB_AND_LOCAL_BUILD.md](GITHUB_AND_LOCAL_BUILD.md) | Push to GitHub & build APK locally |
 | [CODE_FIXES_SUMMARY.md](CODE_FIXES_SUMMARY.md) | Code fixes: CardTheme, ClipRRect, AGP 🔧 |
 | [GRADLE_FIX.md](GRADLE_FIX.md) | Fix Gradle 8.3 → 8.4 version error 🔧 |
+| [ANDROID_RESOURCES_FIX.md](ANDROID_RESOURCES_FIX.md) | Fix missing Android resources 🔧 |
 | [ANDROID_BUILD_FIX.md](ANDROID_BUILD_FIX.md) | Fix Android v1 embedding error 🔧 |
 | [HOW_TO_RUN_FLUTTER_APP.md](HOW_TO_RUN_FLUTTER_APP.md) | Detailed Flutter app setup |
 | [FLUTTER_APP_SUMMARY.md](FLUTTER_APP_SUMMARY.md) | Complete Flutter app summary |
