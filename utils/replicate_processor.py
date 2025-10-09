@@ -117,16 +117,21 @@ class ReplicateProcessor:
         
         input_uri = self._image_to_data_uri(image)
         
+        # Use SDXL with cartoon prompt
         if style in ["anime", "japanese"]:
-            output = replicate.run(
-                "lucataco/anime-gan:3a3ddb5a2c7e8ee3181dc35aa0b01cbb9ea3a3965e4e1d36f6a2ea0cc2043cd6",
-                input={"image": input_uri}
-            )
+            prompt = "anime style illustration, japanese animation, vibrant colors, manga art"
         else:
-            output = replicate.run(
-                "catacolabs/cartoonify:f109015d60170dfb20460f17da8cb863155823c85ece1115e1e9e4ec7ef51d3b",
-                input={"image": input_uri}
-            )
+            prompt = "cartoon illustration, pixar style, 3D animation, colorful, fun"
+        
+        output = replicate.run(
+            "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+            input={
+                "image": input_uri,
+                "prompt": prompt,
+                "strength": 0.8,
+                "num_inference_steps": 30
+            }
+        )
         
         result_url = self._normalize_replicate_output(output)
         return self._download_image(result_url)
@@ -170,17 +175,9 @@ class ReplicateProcessor:
         return self._download_image(result_url)
     
     def generate_depth_map(self, image):
-        """Generate depth map from image. Raises exception on failure."""
-        if not self.replicate_token:
-            raise Exception("No Replicate token available")
-        
-        input_uri = self._image_to_data_uri(image)
-        output = replicate.run(
-            "cjwbw/midas:7d3a9a6c8e3a0a0a0e0e0e0e0e0e0e0e0e0e0e0e",
-            input={"image": input_uri}
-        )
-        result_url = self._normalize_replicate_output(output)
-        return self._download_image(result_url)
+        """Generate depth map - currently unavailable. Raises exception."""
+        # Depth map models currently unavailable on Replicate
+        raise Exception("Depth map feature temporarily unavailable")
     
     def generate_image_from_text(self, prompt, negative_prompt="", width=512, height=512):
         """Generate image from text prompt. Raises exception on failure."""

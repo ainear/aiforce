@@ -279,74 +279,32 @@ def remove_background():
 
 @advanced_bp.route('/depth-map', methods=['POST'])
 def depth_map():
-    """Generate depth map from image (Replicate primary, HF fallback)"""
+    """Generate depth map from image - Feature unavailable"""
     try:
         if 'image' not in request.files:
             return jsonify({'error': 'No image file provided'}), 400
         
-        file = request.files['image']
-        image = Image.open(file.stream)
-        
-        # Try Replicate first
-        try:
-            result_image = replicate_processor.generate_depth_map(image)
-            output = io.BytesIO()
-            result_image.save(output, format='PNG')
-            output.seek(0)
-            return send_file(output, mimetype='image/png')
-        except Exception as replicate_error:
-            print(f"Replicate failed: {replicate_error}, trying Hugging Face...")
-            
-            # Fallback to Hugging Face
-            image_bytes = ImageProcessor.image_to_bytes(image)
-            model_id = "Intel/dpt-large"
-            response = query_image_to_image(model_id, image_bytes)
-            
-            if response.status_code == 200:
-                result_image = Image.open(io.BytesIO(response.content))
-                output = io.BytesIO()
-                result_image.save(output, format='PNG')
-                output.seek(0)
-                return send_file(output, mimetype='image/png')
-            else:
-                return jsonify({
-                    'error': 'Both Replicate and HF failed',
-                    'replicate_error': str(replicate_error),
-                    'hf_error': response.text
-                }), 500
+        # Depth map models currently unavailable
+        return jsonify({
+            'error': 'Depth map feature temporarily unavailable',
+            'details': 'Depth estimation models are currently not accessible. Please try other features.'
+        }), 503
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @advanced_bp.route('/colorize', methods=['POST'])
 def colorize():
-    """Colorize black and white images"""
+    """Colorize black and white images - Feature unavailable"""
     try:
         if 'image' not in request.files:
             return jsonify({'error': 'No image file provided'}), 400
         
-        file = request.files['image']
-        image = Image.open(file.stream)
-        image_bytes = ImageProcessor.image_to_bytes(image)
-        
-        model_id = "ddcolor/ddcolor"
-        
-        response = query_image_to_image(model_id, image_bytes)
-        
-        if response.status_code == 200:
-            result_image = Image.open(io.BytesIO(response.content))
-            
-            output = io.BytesIO()
-            result_image.save(output, format='PNG')
-            output.seek(0)
-            
-            return send_file(output, mimetype='image/png')
-        else:
-            return jsonify({
-                'error': 'Colorization failed',
-                'details': response.text,
-                'status_code': response.status_code
-            }), 500
+        # Colorize models currently unavailable
+        return jsonify({
+            'error': 'Colorize feature temporarily unavailable',
+            'details': 'Colorization models are currently not accessible. Please try other features.'
+        }), 503
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500

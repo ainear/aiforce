@@ -149,6 +149,18 @@ def list_templates():
 
 @app.route('/api/templates/face-swap', methods=['POST'])
 def template_face_swap():
+    """Face swap with template - Feature unavailable"""
+    try:
+        # Face swap models currently unavailable
+        return jsonify({
+            'error': 'Template face swap temporarily unavailable',
+            'details': 'Face swap models are currently not accessible. We recommend using Cartoonify or Style Transfer for creative photo effects.'
+        }), 503
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def template_face_swap():
     """Face swap user's face with template image"""
     try:
         # Support both 'face_image' and 'user_image' for flexibility
@@ -343,45 +355,11 @@ def swap_face():
         source_image = Image.open(source_file.stream)
         target_image = Image.open(target_file.stream)
         
-        # Try Replicate first
-        try:
-            result_image = replicate_processor.swap_face(source_image, target_image)
-            output = io.BytesIO()
-            result_image.save(output, format='PNG')
-            output.seek(0)
-            return send_file(output, mimetype='image/png')
-        except Exception as replicate_error:
-            print(f"Replicate failed: {replicate_error}, trying Hugging Face...")
-            
-            # Fallback to Hugging Face
-            source_bytes = image_to_bytes(source_image)
-            target_bytes = image_to_bytes(target_image)
-            
-            model_id = "tonyassi/face-swap"
-            files = {
-                'source_image': source_bytes,
-                'target_image': target_bytes
-            }
-            
-            headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-            response = requests.post(
-                f"{HF_API_URL}{model_id}",
-                headers=headers,
-                files=files
-            )
-            
-            if response.status_code == 200:
-                result_image = Image.open(io.BytesIO(response.content))
-                output = io.BytesIO()
-                result_image.save(output, format='PNG')
-                output.seek(0)
-                return send_file(output, mimetype='image/png')
-            else:
-                return jsonify({
-                    'error': 'Both Replicate and HF failed',
-                    'replicate_error': str(replicate_error),
-                    'hf_error': response.text
-                }), 500
+        # Face swap models currently unavailable
+        return jsonify({
+            'error': 'Face swap feature temporarily unavailable',
+            'details': 'Face swap models are currently not accessible. Please try HD Upscale, Cartoonify, or Style Transfer instead.'
+        }), 503
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
