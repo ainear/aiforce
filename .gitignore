@@ -49,8 +49,24 @@ Thumbs.db
 tmp/
 temp/
 uploads/
+attached_assets/
 *.pyc
 __pycache__/
 .pythonlibs/
 .env
 .venv/
+
+# Flutter/Dart
+flutter_app/.dart_tool/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+flutter_app/.packages
+flutter_app/build/
+flutter_app/ios/Pods/
+flutter_app/ios/.symlinks/
+flutter_app/android/.gradle/
+flutter_app/android/app/debug/
+flutter_app/android/app/profile/
+flutter_app/android/app/release/
+flutter_app/.metadata
+flutter_app/pubspec.lock
