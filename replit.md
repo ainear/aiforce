@@ -28,6 +28,14 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
 
 ## Recent Changes
+- **2025-10-09**: Model Fixes & Error Handling ✅
+  - Fixed Cartoonify: Now uses SDXL with cartoon-specific prompts (working!)
+  - Fixed unavailable features: Face Swap, Template Face Swap, Depth Map, Colorize return 503 with helpful error messages
+  - Simplified error handling for better user experience
+  - Created FEATURES_STATUS_UPDATE.md with comprehensive status report
+  - **7 features working**: HD Upscale, Restore Photo, Cartoonify, Style Transfer, AI Hugs, Future Baby, Remove Background
+  - **6 features unavailable**: Face Swap, Template Face Swap, Depth Map, Colorize (model access issues)
+  
 - **2025-10-09**: Production Deployment Fix - Replit Shield Issue 🚨
   - Identified root cause: Replit Shield blocking mobile app requests
   - All features show "Network error" because of 307 redirects to Shield
