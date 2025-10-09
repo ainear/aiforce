@@ -105,23 +105,10 @@ class ReplicateProcessor:
         return self._download_image(result_url)
     
     def swap_face(self, source_face_image, target_image):
-        """Swap faces using InsightFace via codeplugtech. Raises exception on failure."""
-        if not self.replicate_token:
-            raise Exception("No Replicate token available")
-        
-        source_uri = self._image_to_data_uri(source_face_image)
-        target_uri = self._image_to_data_uri(target_image)
-        
-        # Use codeplugtech/face-swap (stable, working model)
-        output = replicate.run(
-            "codeplugtech/face-swap:278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34",
-            input={
-                "input_image": target_uri,  # The base image (template)
-                "swap_image": source_uri     # The face to swap in (user face)
-            }
-        )
-        result_url = self._normalize_replicate_output(output)
-        return self._download_image(result_url)
+        """Swap faces - currently disabled, use HuggingFace fallback. Raises exception."""
+        # Replicate face swap models are unstable/unavailable
+        # Raise exception to trigger HuggingFace fallback
+        raise Exception("Replicate face swap unavailable, using HuggingFace fallback")
     
     def cartoonify(self, image, style="general"):
         """Transform photo to cartoon/anime style. Raises exception on failure."""
