@@ -53,6 +53,11 @@ def image_to_bytes(image):
     img_byte_arr.seek(0)
     return img_byte_arr.read()
 
+@app.route('/healthz')
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'ok'}), 200
+
 @app.route('/')
 def home():
     return send_from_directory('static', 'index.html')

@@ -28,6 +28,13 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
 
 ## Recent Changes
+- **2025-10-09**: Deployment Health Check Fix ✅
+  - Added `/healthz` and `/health` endpoints for production health checks
+  - Installed Gunicorn WSGI server for production deployment
+  - Fixed route bug causing static file serving issues
+  - Configured Autoscale deployment with Gunicorn (2 workers, 120s timeout)
+  - Ready to republish without health check failures
+  
 - **2025-10-09**: Flutter Mobile App Complete ✅
   - Created complete Flutter app with 11 AI features
   - Beautiful UI/UX with Material 3 design
