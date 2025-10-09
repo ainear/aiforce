@@ -17,6 +17,7 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ## Current State
 ✅ Flask API server running on port 5000
 ✅ **Replicate API integration (primary)** with Hugging Face fallback
+✅ **Supabase Storage integration** - Persistent image storage fully functional
 ✅ All features fully working: HD upscale, restore, face swap, cartoonify, style transfer
 ✅ Advanced endpoints: background removal, depth map, AI hugs, future baby, templates
 ✅ Automatic fallback logic for maximum reliability
@@ -24,8 +25,19 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ✅ Comprehensive API documentation updated for Replicate
 ✅ Production-ready with robust error handling
 ✅ **Web Testing UI** - Beautiful interface to test all API features
+✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
 
 ## Recent Changes
+- **2025-10-09**: Supabase Storage Integration Complete ✅
+  - Created Supabase project and storage bucket "ai-photos"
+  - Configured public access policies (SELECT & INSERT)
+  - Added SUPABASE_URL and SUPABASE_KEY to Replit Secrets
+  - Implemented SupabaseStorage module for upload/delete operations
+  - Added `/api/ai/process-and-save` endpoint with storage support
+  - Successfully tested image upload and public URL access
+  - Created comprehensive Flutter integration guide
+  - All documentation updated (SUPABASE_INTEGRATION.md, FLUTTER_INTEGRATION.md)
+  
 - **2025-10-09**: Imported to Replit & Setup Complete
   - Successfully imported ImageForge project from ZIP file
   - Installed all Python dependencies (Flask, Replicate, Pillow, etc.)
@@ -71,6 +83,7 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 - **Backend Framework**: Flask (Python)
 - **Primary AI Provider**: Replicate API (stable, feature-complete)
 - **Fallback AI Provider**: Hugging Face Inference API
+- **Image Storage**: Supabase Storage (persistent, public URLs)
 - **Image Processing**: Pillow (PIL), Replicate SDK
 - **CORS**: Flask-CORS for Flutter app integration
 
@@ -84,14 +97,19 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 ├── utils/
 │   ├── __init__.py
 │   ├── image_processor.py      # Image processing utilities
-│   └── replicate_processor.py  # Replicate API integration
+│   ├── replicate_processor.py  # Replicate API integration
+│   ├── supabase_storage.py     # Supabase Storage integration
+│   └── response_helper.py      # Response formatting utilities
 ├── static/                     # Web UI files
 │   ├── index.html             # Testing interface
 │   ├── styles.css             # UI styling
 │   └── script.js              # API integration JS
 ├── test_api.py                 # API testing script
 ├── API_INTEGRATION.md          # Flutter integration guide
+├── FLUTTER_INTEGRATION.md      # Complete Flutter code examples
+├── SUPABASE_INTEGRATION.md     # Supabase setup & usage guide
 ├── IMPLEMENTATION_NOTES.md     # Technical details & architecture
+├── flutter_example.dart        # Quick Flutter code example
 ├── .env.example                # Environment variables template
 └── replit.md                   # This file
 ```
@@ -118,6 +136,12 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 - `/api/templates/list` - List all face swap templates ✅
 - `/api/templates/face-swap` - Swap user face with template ✅ (Replicate+HF)
 
+**Storage Endpoints:**
+- `/api/ai/process-and-save` - Process image & optionally save to Supabase ✅
+  - Supports all AI features (hd-upscale, cartoonify, restore, remove-bg)
+  - Returns storage URL when `save_storage=true`
+  - Returns image bytes when `save_storage=false`
+
 ## User Preferences
 - Primary: Replicate API for stable, reliable AI processing
 - Fallback: Hugging Face Pro token for backup and higher rate limits
@@ -132,11 +156,14 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 - requests - HTTP client for API calls
 - python-dotenv - Environment configuration
 - replicate - Replicate API SDK
+- supabase - Supabase client for storage
 
 ## Environment Variables
-Required in `.env`:
-- `REPLICATE_API_TOKEN` - Replicate API token (primary provider)
+Required in `.env` / Replit Secrets:
+- `REPLICATE_API_TOKEN` - Replicate API token (primary provider) ✅
 - `HUGGINGFACE_API_TOKEN` - Hugging Face API token (Pro recommended)
+- `SUPABASE_URL` - Supabase project URL ✅
+- `SUPABASE_KEY` - Supabase API key (anon/public) ✅
 - `SESSION_SECRET` - Flask session secret
 
 ## Integration Notes
@@ -151,8 +178,10 @@ Required in `.env`:
 ### Alternative Services
 - **Replicate API**: ✅ Integrated as primary provider
 - **Hugging Face API**: ✅ Integrated as fallback provider
-- **Replit Object Storage**: For storing processed images (planned)
-- **Supabase Storage**: For user data and permanent images (planned)
+- **Supabase Storage**: ✅ Fully integrated for permanent image storage
+  - Bucket: `ai-photos` (public read access)
+  - Automatic URL generation for stored images
+  - User-organized file structure: `user-id/feature_timestamp_uuid.png`
 
 ## Development Commands
 - Run server: `python app.py`
@@ -160,14 +189,15 @@ Required in `.env`:
 - Port: 5000 (webview enabled)
 
 ## Next Steps (Future Phase)
-- Add Replit Object Storage for image persistence
-- Implement Supabase integration for user data
-- Add job queue for batch processing
+- ✅ Supabase Storage integration (COMPLETE)
+- ✅ Flutter integration documentation (COMPLETE)
+- Add user authentication (Supabase Auth)
 - Implement rate limiting
-- Add user authentication
 - Create payment integration for premium features
+- Add job queue for batch processing
 - Optimize model selection based on performance
 - Add image caching layer
+- Add image gallery/history feature
 - Deploy with production WSGI server (gunicorn)
 
 ## Notes
