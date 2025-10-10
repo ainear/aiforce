@@ -4,18 +4,20 @@
 This project is a Flask-based REST API providing AI-powered photo editing features for integration with Flutter mobile applications. It aims to offer serverless AI image processing capabilities, similar to Glam AI, utilizing models from Replicate and Hugging Face. Key features include face swapping, image upscaling, old photo restoration, cartoonify effects, style transfer, template-based transformations, and video face swapping. The project emphasizes robust error handling, automatic fallback mechanisms, and persistent image storage.
 
 ## User Preferences
-- Primary: Replicate API for stable, reliable AI processing
-- Fallback: Hugging Face Pro token for backup and higher rate limits
+- **Primary**: Replicate API (codeplugtech/face-swap) - Fast, cheap ($0.0026/video), audio preserved ✅
+- **Fallback**: VModel.AI - Premium quality, commercial license, audio preserved ✅
+- **Disabled**: HuggingFace Pro (all models had compatibility issues)
 - Planning to integrate with Supabase for user data storage
-- Target platform: Flutter mobile app
-- Prefer cloud-based API approach (Replicate/HF) over local model hosting
+- Target platform: Flutter mobile app (Vietnamese user, builds APK locally in VS Code)
+- Prefer cloud-based API approach over local model hosting
 
 ## System Architecture
 
 ### Stack
 - **Backend Framework**: Flask (Python)
-- **Primary AI Provider**: Replicate API
-- **Fallback AI Provider**: Hugging Face Inference API
+- **Primary AI Provider**: Replicate API (codeplugtech/face-swap)
+- **Fallback AI Provider**: VModel.AI (video-face-swap-pro)
+- **Disabled Provider**: HuggingFace (compatibility issues with all video models)
 - **Image Storage**: Supabase Storage
 - **Image Processing**: Pillow (PIL), Replicate SDK
 - **CORS**: Flask-CORS
@@ -38,9 +40,13 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 - **Template Face Swap**:
     - `/api/templates/list`: Lists available face swap templates.
     - `/api/templates/face-swap`: Swaps user faces with templates.
-- **Video Face Swap**:
-    - `/api/video/face-swap`: Performs video face swapping with multi-model fallback.
-    - `/api/video/providers`: Lists available video face swap models.
+- **Video Face Swap** (✅ AUDIO PRESERVED):
+    - `/api/video/face-swap`: Video face swapping with 3 provider options:
+      - `auto`: Replicate primary → VModel fallback (RECOMMENDED)
+      - `replicate`: codeplugtech/face-swap ($0.0026/video, ~10-15s)
+      - `vmodel`: VModel.AI premium (~15-30s, commercial license)
+    - `/api/video/providers`: Lists available video face swap providers and models.
+    - **All providers preserve original video audio!**
 - **Storage Integration**:
     - `/api/ai/process-and-save`: Processes images and optionally saves to Supabase Storage, returning a public URL.
 
@@ -49,15 +55,40 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 - The Flutter mobile application is designed with Material 3, featuring a modern UI with three main screens: Home, Feature Detail, and Template Gallery.
 
 ### System Design
-- The architecture supports automatic fallback from Replicate to Hugging Face for enhanced reliability.
+- **Video Face Swap Architecture**:
+  - Auto mode: Replicate (fast, cheap) → VModel (premium) fallback
+  - Audio preservation: All providers keep original video audio
+  - Replicate model: codeplugtech/face-swap (384 videos per $1)
+  - VModel: Premium quality with commercial license
+  - HuggingFace: DISABLED due to compatibility issues
 - Image storage is handled by Supabase Storage, ensuring persistent access via public URLs.
 - CORS is enabled to facilitate seamless integration with the Flutter mobile application.
 - Health check endpoints (`/healthz`, `/health`) are implemented for production monitoring.
 - The system is designed for production readiness, utilizing Gunicorn for deployment.
 
 ## External Dependencies
-- **Replicate API**: Primary AI model provider for various image and video processing tasks.
-- **Hugging Face Inference API**: Secondary/fallback AI model provider, including specific models for video face swapping (e.g., `tonyassi/video-face-swap`, `yoshibomball123/Video-Face-Swap`).
+
+### API Providers (Video Face Swap)
+- **Replicate API** (PRIMARY): 
+  - Model: `codeplugtech/face-swap`
+  - Cost: $0.0026 per video (~384 videos per $1)
+  - Speed: ~10-15 seconds
+  - Audio: ✅ Preserved
+  - API Key: `REPLICATE_PRO_TOKEN`
+  
+- **VModel.AI** (FALLBACK):
+  - Model: `vmodel/video-face-swap-pro`
+  - Cost: Per-second pricing (~$0.10 per video)
+  - Speed: ~15-30 seconds
+  - Audio: ✅ Preserved
+  - Quality: Premium, commercial license
+  - API Key: `VMODEL_API_TOKEN`
+
+- **HuggingFace** (DISABLED):
+  - All models failed due to compatibility issues
+  - No longer used in production
+
+### Storage & Framework
 - **Supabase Storage**: Used for persistent storage of processed images, configured with a public `ai-photos` bucket.
 - **Flask**: Python web framework.
 - **Flask-CORS**: Enables Cross-Origin Resource Sharing.
@@ -66,4 +97,3 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 - **python-dotenv**: Manages environment variables.
 - **replicate (Python SDK)**: Client library for interacting with the Replicate API.
 - **supabase (Python SDK)**: Client library for interacting with Supabase services.
-- **gradio-client**: Used for accessing Hugging Face Spaces API.
