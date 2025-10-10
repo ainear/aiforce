@@ -22,14 +22,21 @@ class VideoFaceSwapProcessor:
         
         # Hugging Face Pro models (order by priority)
         self.hf_models = [
-            "tonyassi/video-face-swap",      # Model 1: Popular
-            "ALSv/video-face-swap",          # Model 2: Alternative
-            "MarkoVidrih/video-face-swap",   # Model 3: Backup
+            {
+                "name": "tonyassi/vfs2-cpu",
+                "params": ["input_image", "input_video", "gender"],
+                "video_format": "dict"
+            },
+            {
+                "name": "MarkoVidrih/video-face-swap",
+                "params": ["face", "video"],
+                "video_format": "file"
+            }
         ]
         
-        # Replicate Pro models (WORKING 2025)
+        # Replicate Pro models (WORKING 2025) - WITH VERSION HASH
         self.replicate_models = [
-            "arabyai-replicate/roop_face_swap",  # WORKING! Video face swap
+            "arabyai-replicate/roop_face_swap:11b6bf0f4e14d808f655e87e5448233cceff10a45f659d71539cafb7163b2e84",
         ]
     
     def _save_temp_file(self, file_data, suffix='.jpg'):
@@ -42,44 +49,63 @@ class VideoFaceSwapProcessor:
         temp.close()
         return temp.name
     
-    def _try_hf_model(self, model_name, face_image_path, video_path, gender="all"):
+    def _try_hf_model(self, model_config, face_image_path, video_path, gender="all"):
         """Try single HF model with timeout"""
+        model_name = model_config["name"]
+        params = model_config["params"]
+        video_format = model_config.get("video_format", "file")
+        
         try:
             print(f"[HF] Trying model: {model_name}")
             start_time = time.time()
             
+            from gradio_client import handle_file
             client = Client(
                 model_name,
                 hf_token=self.hf_pro_token if self.hf_pro_token else None
             )
             
-            # Try different API call methods
-            try:
-                # Method 1: With named parameters
-                result = client.predict(
-                    face_image_path,
-                    video_path,
-                    gender,
-                    api_name="/predict"
-                )
-            except Exception as e1:
-                print(f"[HF] Method 1 failed: {e1}, trying method 2...")
-                try:
-                    # Method 2: Without api_name
-                    result = client.predict(
-                        face_image_path,
-                        video_path,
-                        gender
-                    )
-                except Exception as e2:
-                    print(f"[HF] Method 2 failed: {e2}, trying method 3...")
-                    # Method 3: Submit job
+            # Prepare arguments based on model config
+            if "input_image" in params and "input_video" in params:
+                # tonyassi/vfs2-cpu format
+                if video_format == "dict":
                     job = client.submit(
-                        face_image_path,
-                        video_path,
-                        gender
+                        input_image=handle_file(face_image_path),
+                        input_video={"video": handle_file(video_path)},
+                        device='cpu',
+                        selector='many',
+                        gender=gender if gender != "all" else None,
+                        race=None,
+                        order=None,
+                        api_name="/predict"
                     )
                     result = job.result()
+                    # Extract video path from result
+                    if isinstance(result, dict) and "video" in result:
+                        result = result["video"]
+                    elif isinstance(result, list) and len(result) > 0:
+                        if isinstance(result[0], dict) and "video" in result[0]:
+                            result = result[0]["video"]
+                else:
+                    result = client.predict(
+                        handle_file(face_image_path),
+                        handle_file(video_path),
+                        api_name="/predict"
+                    )
+            elif "face" in params and "video" in params:
+                # MarkoVidrih format (2 params only)
+                result = client.predict(
+                    handle_file(face_image_path),
+                    handle_file(video_path),
+                    api_name="/predict"
+                )
+            else:
+                # Default fallback
+                result = client.predict(
+                    handle_file(face_image_path),
+                    handle_file(video_path),
+                    api_name="/predict"
+                )
             
             elapsed = time.time() - start_time
             print(f"[HF] {model_name} completed in {elapsed:.2f}s")
@@ -121,9 +147,10 @@ class VideoFaceSwapProcessor:
         
         # Try each HF model with timeout
         last_error = None
-        for model_name in self.hf_models:
+        for model_config in self.hf_models:
+            model_name = model_config["name"]
             try:
-                result = self._try_hf_model(model_name, face_path, video_path, gender)
+                result = self._try_hf_model(model_config, face_path, video_path, gender)
                 
                 # Success! Return video file path
                 print(f"[HF] ✅ Success with {model_name}")

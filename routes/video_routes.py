@@ -122,8 +122,7 @@ def get_providers():
             'huggingface': {
                 'name': 'HuggingFace Pro',
                 'models': [
-                    'tonyassi/video-face-swap',
-                    'ALSv/video-face-swap',
+                    'tonyassi/vfs2-cpu',
                     'MarkoVidrih/video-face-swap'
                 ],
                 'timeout': '5-7 seconds per model',
@@ -136,7 +135,8 @@ def get_providers():
                     'arabyai-replicate/roop_face_swap'
                 ],
                 'features': ['video'],
-                'pricing': '~$0.11 per run',
+                'pricing': '~$0.11-0.14 per run',
+                'speed': '~77 seconds average',
                 'status': '✅ WORKING 2025'
             }
         },
