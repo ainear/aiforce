@@ -337,7 +337,7 @@ class VideoFaceSwapProcessor:
             for i in range(max_retries):
                 try:
                     status_response = requests.get(
-                        f"https://api.vmodel.ai/api/tasks/v1/{task_id}",
+                        f"https://api.vmodel.ai/api/tasks/v1/get/{task_id}",
                         headers={"Authorization": f"Bearer {self.vmodel_token}"}
                     )
                     
