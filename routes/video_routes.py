@@ -54,8 +54,8 @@ def video_face_swap():
         gender = request.form.get('gender', 'all')       # all, male, female
         
         # Validate provider
-        if provider not in ['auto', 'replicate', 'vmodel']:
-            return jsonify({'error': f'Invalid provider: {provider}. Use: auto, replicate, or vmodel'}), 400
+        if provider not in ['auto', 'vmodel']:
+            return jsonify({'error': f'Invalid provider: {provider}. Use: auto or vmodel (replicate disabled)'}), 400
         
         # Validate gender
         if gender not in ['all', 'male', 'female']:
@@ -153,26 +153,14 @@ def get_providers():
     return jsonify({
         'providers': {
             'auto': {
-                'name': 'Auto (Smart Fallback)',
-                'strategy': 'Replicate primary → VModel fallback',
-                'models': ['codeplugtech/face-swap', 'vmodel/video-face-swap-pro'],
-                'timeout': '15-90 seconds',
+                'name': 'Auto (VModel Only)',
+                'strategy': 'VModel.AI Premium',
+                'models': ['vmodel/video-face-swap-pro'],
+                'timeout': '15-30 seconds',
                 'audio_preserved': True,
-                'cost': '$0.0026-0.10 per video',
-                'status': '✅ RECOMMENDED'
-            },
-            'replicate': {
-                'name': 'Replicate (Fast & Cheap)',
-                'models': [
-                    'codeplugtech/face-swap'
-                ],
-                'features': ['video'],
-                'pricing': '~$0.11-0.14 per run',
-                'speed': '~77 seconds average',
-                'timeout': '10-15 seconds',
-                'audio_preserved': True,
-                'cost': '$0.0026 per video (~384 videos per $1)',
-                'status': '✅ WORKING 2025'
+                'cost': '$0.03/second (~$0.10 per short video)',
+                'status': '✅ RECOMMENDED',
+                'note': 'Replicate disabled (image-only models)'
             },
             'vmodel': {
                 'name': 'VModel.AI (Premium)',
@@ -181,9 +169,17 @@ def get_providers():
                 ],
                 'timeout': '15-30 seconds',
                 'audio_preserved': True,
-                'cost': 'Per-second pricing (~$0.10 per video)',
+                'cost': '$0.03/second (~$0.10 per short video)',
                 'quality': 'Premium, commercial license',
-                'status': '✅ WORKING 2025'
+                'status': '✅ WORKING 2025',
+                'requirements': 'Requires Supabase (auto-uploads files)'
+            },
+            'replicate': {
+                'name': 'Replicate (Disabled)',
+                'status': '❌ DISABLED',
+                'reason': 'All Replicate models are IMAGE swap only, not VIDEO',
+                'tested_models': ['yan-ops/face_swap', 'arabyai-replicate/roop_face_swap'],
+                'note': 'Use VModel for video face swap'
             }
         },
         'supported_formats': {
@@ -191,9 +187,10 @@ def get_providers():
             'image': list(ALLOWED_IMAGE_EXTENSIONS)
         },
         'usage': {
-            'provider_auto': 'Replicate primary (fast, cheap) → VModel fallback (premium)',
-            'provider_replicate': 'Replicate only - codeplugtech/face-swap with audio ($0.0026/video)',
-            'provider_vmodel': 'VModel only - premium quality with commercial license',
-            'audio_note': '✅ All providers preserve original audio!'
+            'provider_auto': 'VModel.AI only (Replicate disabled for video)',
+            'provider_vmodel': 'VModel.AI - premium quality, requires Supabase',
+            'provider_replicate': 'DISABLED - image swap only',
+            'audio_note': '✅ VModel preserves original video audio!',
+            'important': 'All Replicate models tested are for IMAGE face swap, not VIDEO'
         }
     })

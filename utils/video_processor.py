@@ -24,11 +24,11 @@ class VideoFaceSwapProcessor:
         # Using Replicate as primary provider
         self.hf_models = []
         
-        # Replicate Pro models (WORKING 2025) - AUDIO PRESERVED
-        # yan-ops/face_swap: Popular, stable, 105M+ runs, VIDEO face swap ✅
-        self.replicate_models = [
-            "yan-ops/face_swap",
-        ]
+        # Replicate Pro models - DISABLED FOR VIDEO (image swap only)
+        # All Replicate models tested are for IMAGE face swap, not VIDEO
+        # yan-ops/face_swap: 105M+ runs but IMAGE only
+        # arabyai-replicate/roop_face_swap: 404 not found
+        self.replicate_models = []
         
         # VModel.AI credentials
         self.vmodel_token = os.getenv('VMODEL_API_TOKEN', '')
@@ -312,8 +312,14 @@ class VideoFaceSwapProcessor:
             response.raise_for_status()
             result = response.json()
             
-            # Get task ID and poll for result
-            task_id = result.get('task_id')
+            # Parse VModel response format: {'code': 200, 'result': {'task_id': '...', 'task_cost': ...}}
+            if result.get('code') == 200 and 'result' in result:
+                task_data = result['result']
+                task_id = task_data.get('task_id')
+            else:
+                # Fallback to old format
+                task_id = result.get('task_id')
+            
             if not task_id:
                 raise Exception(f"VModel API error: {result}")
             
@@ -366,10 +372,8 @@ class VideoFaceSwapProcessor:
         print(f"[VideoSwap] Starting with provider: {provider}")
         
         if provider == "replicate":
-            # Replicate only - codeplugtech/face-swap with audio
-            print("[VideoSwap] Using Replicate (codeplugtech/face-swap)")
-            result, model = self.swap_face_replicate(face_image, video_file)
-            return result, "replicate", model
+            # Replicate disabled for video (image swap only)
+            raise Exception("Replicate video face swap disabled - all models are image-only. Use VModel instead.")
         
         elif provider == "vmodel":
             # VModel only - premium quality with audio
@@ -378,26 +382,11 @@ class VideoFaceSwapProcessor:
             return result, "vmodel", model
         
         else:  # "auto" or any other value
-            # Auto mode: Replicate primary → VModel fallback
-            print("[VideoSwap] Auto mode - Replicate primary, VModel fallback")
+            # Auto mode: Use VModel (Replicate disabled for video)
+            print("[VideoSwap] Auto mode - Using VModel (Replicate disabled for video)")
             
-            try:
-                # Try Replicate first (faster, cheaper)
-                result, model = self.swap_face_replicate(face_image, video_file)
-                return result, "replicate", model
-            
-            except Exception as replicate_error:
-                print(f"[VideoSwap] Replicate failed: {replicate_error}")
-                
-                # Fallback to VModel if available
-                if self.vmodel_token:
-                    print("[VideoSwap] Falling back to VModel...")
-                    try:
-                        result, model = self.swap_face_vmodel(face_image, video_file)
-                        return result, "vmodel (fallback)", model
-                    except Exception as vmodel_error:
-                        print(f"[VideoSwap] VModel fallback failed: {vmodel_error}")
-                        raise Exception(f"Both providers failed. Replicate: {replicate_error}, VModel: {vmodel_error}")
-                else:
-                    print("[VideoSwap] VModel not configured, cannot fallback")
-                    raise replicate_error
+            if self.vmodel_token:
+                result, model = self.swap_face_vmodel(face_image, video_file)
+                return result, "vmodel", model
+            else:
+                raise Exception("VMODEL_API_TOKEN required for video face swap (Replicate disabled for video)")
