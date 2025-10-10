@@ -48,6 +48,14 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
     - `/api/video/providers`: Lists available video face swap providers and models.
     - **All providers preserve original video audio!**
     - **Status**: Both Replicate & VModel confirmed working (Oct 2025)
+- **Template Video Face Swap** (✅ NEW FEATURE):
+    - `/api/template-video/list`: List available template videos
+    - `/api/template-video/preview/{filename}`: Preview template video
+    - `/api/template-video/swap`: Swap user face into template video (user chỉ upload face, không cần video)
+    - `/api/template-video/upload-template`: Upload new template (admin)
+    - **Use case**: User upload face → Swap vào video template có sẵn
+    - **Providers**: ✅ Replicate, ✅ VModel (reuse VideoFaceSwapProcessor)
+    - **Web UI**: `/template-video-swap` for testing
 - **Storage Integration**:
     - `/api/ai/process-and-save`: Processes images and optionally saves to Supabase Storage, returning a public URL.
 

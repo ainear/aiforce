@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Video Face Swap - AI Photo Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+
+        .sidebar {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .upload-section {
+            margin-bottom: 25px;
+        }
+
+        .upload-section label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .file-input-button:hover {
+            background: #e8e8e8;
+            border-color: #667eea;
+        }
+
+        .face-preview {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .face-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .provider-select {
+            margin-bottom: 25px;
+        }
+
+        .provider-select select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+        }
+
+        .swap-button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .swap-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .swap-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .templates-grid {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .templates-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .templates-header h2 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .upload-template-btn {
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .upload-template-btn:hover {
+            background: #45a049;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .template-card {
+            background: #f9f9f9;
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+        }
+
+        .template-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .template-card.selected {
+            border-color: #667eea;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .template-card video {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .template-info {
+            padding: 15px;
+        }
+
+        .template-info h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .template-info .size {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .selected-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .result-section {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .result-video {
+            width: 100%;
+            max-width: 800px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .download-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-confirm {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Template Video Face Swap</h1>
+            <p>Chọn template video có sẵn, upload khuôn mặt của bạn để swap ngay!</p>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h2>⚙️ Cấu Hình</h2>
+                
+                <div class="upload-section">
+                    <label>📸 Upload Khuôn Mặt</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="faceInput" accept="image/png,image/jpeg,image/jpg,image/webp">
+                        <label for="faceInput" class="file-input-button">
+                            Chọn ảnh khuôn mặt...
+                        </label>
+                    </div>
+                    <div id="facePreview" class="face-preview"></div>
+                </div>
+
+                <div class="provider-select">
+                    <label>🔧 AI Provider</label>
+                    <select id="providerSelect">
+                        <option value="auto">🤖 Auto (Replicate → VModel)</option>
+                        <option value="replicate">⚡ Replicate ($0.14, ~77s)</option>
+                        <option value="vmodel">🚀 VModel ($0.10, nhanh hơn)</option>
+                    </select>
+                </div>
+
+                <button id="swapButton" class="swap-button" disabled>
+                    🎨 Swap Face Vào Template
+                </button>
+
+                <div style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 10px; font-size: 0.9em;">
+                    <strong>ℹ️ Hướng dẫn:</strong><br>
+                    1. Chọn template video bên phải<br>
+                    2. Upload ảnh khuôn mặt của bạn<br>
+                    3. Chọn provider AI<br>
+                    4. Click "Swap Face" và đợi!<br>
+                    <br>
+                    <strong>✅ Audio được giữ nguyên!</strong>
+                </div>
+            </div>
+
+            <div class="templates-grid">
+                <div class="templates-header">
+                    <h2>📂 Template Videos</h2>
+                    <button class="upload-template-btn" onclick="openUploadModal()">
+                        ➕ Upload Template
+                    </button>
+                </div>
+
+                <div id="templatesContainer" class="loading">
+                    <div class="spinner"></div>
+                    <p>Đang tải templates...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultSection" class="result-section">
+            <h2>✅ Kết Quả</h2>
+            <video id="resultVideo" class="result-video" controls></video>
+            <div style="margin-top: 20px;">
+                <a id="downloadLink" class="download-btn" download="face-swapped-video.mp4">
+                    ⬇️ Download Video
+                </a>
+                <p style="margin-top: 10px; color: #666;">
+                    <strong>Provider:</strong> <span id="usedProvider"></span><br>
+                    <strong>Audio:</strong> ✅ Preserved
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Template Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <h3>➕ Upload Template Video</h3>
+            <div class="upload-section">
+                <label>Chọn video template:</label>
+                <input type="file" id="templateVideoInput" accept="video/mp4,video/avi,video/mov,video/webm">
+            </div>
+            <div class="upload-section">
+                <label>Tên template (tùy chọn):</label>
+                <input type="text" id="templateNameInput" placeholder="vd: dance-video" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeUploadModal()">Hủy</button>
+                <button class="btn-confirm" onclick="uploadTemplate()">Upload</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedTemplate = null;
+        let faceImage = null;
+
+        // Load templates on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTemplates();
+        });
+
+        // Face image upload
+        document.getElementById('faceInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                faceImage = file;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('facePreview').innerHTML = 
+                        `<img src="${e.target.result}" alt="Face preview">`;
+                };
+                reader.readAsDataURL(file);
+                
+                updateSwapButton();
+            }
+        });
+
+        // Provider select
+        document.getElementById('providerSelect').addEventListener('change', function() {
+            updateSwapButton();
+        });
+
+        // Swap button
+        document.getElementById('swapButton').addEventListener('click', function() {
+            if (!selectedTemplate || !faceImage) {
+                showStatus('error', 'Vui lòng chọn template và upload ảnh khuôn mặt!');
+                return;
+            }
+            
+            swapFaceWithTemplate();
+        });
+
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/template-video/list');
+                const data = await response.json();
+                
+                const container = document.getElementById('templatesContainer');
+                
+                if (data.templates.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z">
+                                </path>
+                            </svg>
+                            <h3>Chưa có template nào</h3>
+                            <p>Nhấn "Upload Template" để thêm template video đầu tiên!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = '<div class="grid" id="templatesGrid"></div>';
+                const grid = document.getElementById('templatesGrid');
+                
+                data.templates.forEach(template => {
+                    const card = document.createElement('div');
+                    card.className = 'template-card';
+                    card.innerHTML = `
+                        <video src="${template.url}" muted loop></video>
+                        <div class="template-info">
+                            <h3>${template.id}</h3>
+                            <div class="size">${template.size_mb} MB</div>
+                            <div class="selected-badge" style="display: none;">✓ Đã chọn</div>
+                        </div>
+                    `;
+                    
+                    // Hover to play video
+                    const video = card.querySelector('video');
+                    card.addEventListener('mouseenter', () => video.play());
+                    card.addEventListener('mouseleave', () => {
+                        video.pause();
+                        video.currentTime = 0;
+                    });
+                    
+                    // Click to select
+                    card.addEventListener('click', () => selectTemplate(template, card));
+                    
+                    grid.appendChild(card);
+                });
+                
+            } catch (error) {
+                document.getElementById('templatesContainer').innerHTML = `
+                    <div class="empty-state">
+                        <h3>❌ Lỗi tải templates</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function selectTemplate(template, card) {
+            // Remove previous selection
+            document.querySelectorAll('.template-card').forEach(c => {
+                c.classList.remove('selected');
+                c.querySelector('.selected-badge').style.display = 'none';
+            });
+            
+            // Select new template
+            selectedTemplate = template;
+            card.classList.add('selected');
+            card.querySelector('.selected-badge').style.display = 'inline-block';
+            
+            showStatus('info', `✓ Đã chọn template: ${template.id}`);
+            updateSwapButton();
+        }
+
+        function updateSwapButton() {
+            const button = document.getElementById('swapButton');
+            button.disabled = !(selectedTemplate && faceImage);
+        }
+
+        async function swapFaceWithTemplate() {
+            const button = document.getElementById('swapButton');
+            const originalText = button.textContent;
+            
+            button.disabled = true;
+            button.textContent = '⏳ Đang xử lý...';
+            
+            showStatus('info', '🔄 Đang swap face vào template, vui lòng đợi...');
+            
+            // Hide result section
+            document.getElementById('resultSection').classList.remove('show');
+            
+            const formData = new FormData();
+            formData.append('face_image', faceImage);
+            formData.append('template_id', selectedTemplate.id);
+            formData.append('provider', document.getElementById('providerSelect').value);
+            
+            try {
+                const response = await fetch('/api/template-video/swap', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Swap failed');
+                }
+                
+                // Show result
+                document.getElementById('resultVideo').src = data.video_url;
+                document.getElementById('downloadLink').href = data.video_url;
+                document.getElementById('usedProvider').textContent = data.provider;
+                document.getElementById('resultSection').classList.add('show');
+                
+                showStatus('success', `✅ Thành công! Provider: ${data.provider}`);
+                
+                // Scroll to result
+                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                showStatus('error', `❌ Lỗi: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+
+        function showStatus(type, message) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.className = `status-message ${type}`;
+            statusEl.textContent = message;
+            statusEl.style.display = 'block';
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('show');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('show');
+            document.getElementById('templateVideoInput').value = '';
+            document.getElementById('templateNameInput').value = '';
+        }
+
+        async function uploadTemplate() {
+            const fileInput = document.getElementById('templateVideoInput');
+            const nameInput = document.getElementById('templateNameInput');
+            
+            if (!fileInput.files[0]) {
+                alert('Vui lòng chọn file video!');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('template_video', fileInput.files[0]);
+            if (nameInput.value) {
+                formData.append('template_name', nameInput.value);
+            }
+            
+            try {
+                showStatus('info', '⏳ Đang upload template...');
+                
+                const response = await fetch('/api/template-video/upload-template', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Upload failed');
+                }
+                
+                closeUploadModal();
+                showStatus('success', '✅ Upload template thành công!');
+                
+                // Reload templates
+                loadTemplates();
+                
+            } catch (error) {
+                showStatus('error', `❌ Lỗi upload: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

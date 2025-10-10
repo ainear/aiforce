@@ -9,6 +9,7 @@ import tempfile
 from dotenv import load_dotenv
 from routes.advanced_features import advanced_bp
 from routes.video_routes import video_bp
+from routes.template_video_routes import template_video_bp
 from utils.replicate_processor import ReplicateProcessor
 from utils.supabase_storage import SupabaseStorage
 
@@ -29,6 +30,7 @@ CORS(app,
 
 app.register_blueprint(advanced_bp, url_prefix='/api/advanced')
 app.register_blueprint(video_bp, url_prefix='/api/video')
+app.register_blueprint(template_video_bp, url_prefix='/api/template-video')
 
 HF_API_TOKEN = os.getenv('HUGGINGFACE_API_TOKEN', '')
 HF_API_URL = "https://api-inference.huggingface.co/models/"
@@ -73,6 +75,10 @@ def health_check():
 @app.route('/')
 def home():
     return send_from_directory('static', 'index.html')
+
+@app.route('/template-video-swap')
+def template_video_swap():
+    return send_from_directory('static', 'template_video_swap.html')
 
 @app.route('/video-swap')
 def video_swap_test():
