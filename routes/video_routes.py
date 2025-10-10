@@ -146,14 +146,14 @@ def get_providers():
     return jsonify({
         'providers': {
             'huggingface': {
-                'name': 'HuggingFace Pro',
+                'name': 'HuggingFace',
                 'models': [
-                    'tonyassi/vfs2-cpu'
+                    'ALSv/video-face-swap',
+                    'MarkoVidrih/video-face-swap'
                 ],
-                'timeout': '5-7 seconds',
+                'timeout': '60 seconds',
                 'auto_fallback': True,
-                'supports_gender_filter': True,
-                'features': ['gender_filter', 'race_filter', 'order_select'],
+                'supports_gender_filter': False,
                 'status': '✅ WORKING 2025'
             },
             'replicate': {

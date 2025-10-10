@@ -21,14 +21,17 @@ class VideoFaceSwapProcessor:
         self.hf_timeout = 60  # 60 seconds timeout for HF models (video processing takes time)
         
         # Hugging Face Pro models (order by priority)
-        # NOTE: tonyassi/video-face-swap is a UI wrapper, not an API
-        # Use the actual API model: tonyassi/vfs2-cpu
+        # Using public Gradio Spaces with API access
         self.hf_models = [
             {
-                "name": "tonyassi/vfs2-cpu",
-                "params": ["input_image", "input_video", "gender"],
-                "video_format": "dict",
-                "use_submit": True
+                "name": "ALSv/video-face-swap",
+                "params": ["face_image", "video"],
+                "video_format": "simple"
+            },
+            {
+                "name": "MarkoVidrih/video-face-swap",
+                "params": ["face", "video"],
+                "video_format": "simple"
             }
         ]
         
@@ -63,42 +66,12 @@ class VideoFaceSwapProcessor:
                 hf_token=self.hf_pro_token if self.hf_pro_token else None
             )
             
-            # Prepare arguments based on model config
-            use_submit = model_config.get("use_submit", False)
-            
-            if video_format == "dict" and use_submit:
-                # tonyassi/vfs2-cpu format with submit()
-                job = client.submit(
-                    input_image=handle_file(face_image_path),
-                    input_video={"video": handle_file(video_path)},
-                    device='cpu',
-                    selector='many',
-                    gender=gender if gender != "all" else None,
-                    race=None,
-                    order=None,
-                    api_name="/predict"
-                )
-                # Wait for result with timeout
-                timeout_start = time.time()
-                while not job.done():
-                    if time.time() - timeout_start > self.hf_timeout:
-                        raise TimeoutError(f"Model took too long")
-                    time.sleep(0.5)
-                
-                if not job.status().success:
-                    raise Exception("Job failed")
-                
-                result = job.outputs()[0]
-                # Extract video path from dict result
-                if isinstance(result, dict) and "video" in result:
-                    result = result["video"]
-            else:
-                # Default fallback
-                result = client.predict(
-                    handle_file(face_image_path),
-                    handle_file(video_path),
-                    api_name="/predict"
-                )
+            # Prepare arguments based on model config - simple predict only
+            result = client.predict(
+                handle_file(face_image_path),
+                handle_file(video_path),
+                api_name="/predict"
+            )
             
             elapsed = time.time() - start_time
             print(f"[HF] {model_name} completed in {elapsed:.2f}s")
@@ -172,15 +145,35 @@ class VideoFaceSwapProcessor:
         
         os.environ["REPLICATE_API_TOKEN"] = self.replicate_pro_token
         
-        # Save face image to temp file with proper extension
-        face_ext = '.jpg'
-        if hasattr(face_image, 'filename'):
-            if face_image.filename.lower().endswith('.png'):
-                face_ext = '.png'
-            elif face_image.filename.lower().endswith('.webp'):
-                face_ext = '.webp'
+        # Save and validate face image - convert to JPEG for Replicate compatibility
+        from PIL import Image
+        import io
         
-        face_path = self._save_temp_file(face_image.stream if hasattr(face_image, 'stream') else face_image, face_ext)
+        # Read image data
+        if hasattr(face_image, 'stream'):
+            face_data = face_image.stream.read()
+            face_image.stream.seek(0)  # Reset stream
+        else:
+            face_data = face_image.read() if hasattr(face_image, 'read') else face_image
+        
+        # Open with PIL and convert to RGB JPEG
+        try:
+            img = Image.open(io.BytesIO(face_data))
+            # Convert to RGB (handles RGBA, grayscale, etc.)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Save as JPEG
+            face_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+            img.save(face_temp.name, 'JPEG', quality=95)
+            face_path = face_temp.name
+            face_temp.close()
+        except Exception as e:
+            print(f"[Replicate] Image conversion error: {e}")
+            # Fallback to original
+            face_path = self._save_temp_file(face_data, '.jpg')
+        
+        # Save video
         video_path = self._save_temp_file(video_file.stream if hasattr(video_file, 'stream') else video_file, '.mp4')
         
         # Try models in order
