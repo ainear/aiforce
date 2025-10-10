@@ -23,14 +23,14 @@ class VideoFaceSwapProcessor:
         # Hugging Face Pro models (order by priority)
         self.hf_models = [
             {
-                "name": "tonyassi/vfs2-cpu",
+                "name": "tonyassi/video-face-swap",
                 "params": ["input_image", "input_video", "gender"],
-                "video_format": "dict"
+                "video_format": "gradio"
             },
             {
-                "name": "MarkoVidrih/video-face-swap",
-                "params": ["face", "video"],
-                "video_format": "file"
+                "name": "tonyassi/deep-fake-video",
+                "params": ["input_image", "input_video"],
+                "video_format": "gradio"
             }
         ]
         
@@ -66,39 +66,23 @@ class VideoFaceSwapProcessor:
             )
             
             # Prepare arguments based on model config
-            if "input_image" in params and "input_video" in params:
-                # tonyassi/vfs2-cpu format
-                if video_format == "dict":
-                    job = client.submit(
-                        input_image=handle_file(face_image_path),
-                        input_video={"video": handle_file(video_path)},
-                        device='cpu',
-                        selector='many',
-                        gender=gender if gender != "all" else None,
-                        race=None,
-                        order=None,
+            if video_format == "gradio":
+                # tonyassi models use gradio format
+                if "gender" in params:
+                    # video-face-swap with gender filter
+                    result = client.predict(
+                        handle_file(face_image_path),
+                        handle_file(video_path),
+                        gender if gender != "all" else "all",
                         api_name="/predict"
                     )
-                    result = job.result()
-                    # Extract video path from result
-                    if isinstance(result, dict) and "video" in result:
-                        result = result["video"]
-                    elif isinstance(result, list) and len(result) > 0:
-                        if isinstance(result[0], dict) and "video" in result[0]:
-                            result = result[0]["video"]
                 else:
+                    # deep-fake-video (no gender)
                     result = client.predict(
                         handle_file(face_image_path),
                         handle_file(video_path),
                         api_name="/predict"
                     )
-            elif "face" in params and "video" in params:
-                # MarkoVidrih format (2 params only)
-                result = client.predict(
-                    handle_file(face_image_path),
-                    handle_file(video_path),
-                    api_name="/predict"
-                )
             else:
                 # Default fallback
                 result = client.predict(
@@ -179,17 +163,24 @@ class VideoFaceSwapProcessor:
         
         os.environ["REPLICATE_API_TOKEN"] = self.replicate_pro_token
         
-        # Save face image to temp file
-        face_path = self._save_temp_file(face_image.stream if hasattr(face_image, 'stream') else face_image, '.jpg')
+        # Save face image to temp file with proper extension
+        face_ext = '.jpg'
+        if hasattr(face_image, 'filename'):
+            if face_image.filename.lower().endswith('.png'):
+                face_ext = '.png'
+            elif face_image.filename.lower().endswith('.webp'):
+                face_ext = '.webp'
+        
+        face_path = self._save_temp_file(face_image.stream if hasattr(face_image, 'stream') else face_image, face_ext)
         video_path = self._save_temp_file(video_file.stream if hasattr(video_file, 'stream') else video_file, '.mp4')
         
-        # Open files for Replicate
-        with open(face_path, 'rb') as f1, open(video_path, 'rb') as f2:
-            # Try models in order
-            for model_name in self.replicate_models:
-                try:
-                    print(f"[Replicate] Trying model: {model_name}")
-                    
+        # Try models in order
+        for model_name in self.replicate_models:
+            try:
+                print(f"[Replicate] Trying model: {model_name}")
+                
+                # Open files for Replicate
+                with open(face_path, 'rb') as f1, open(video_path, 'rb') as f2:
                     output = replicate.run(
                         model_name,
                         input={
@@ -197,39 +188,39 @@ class VideoFaceSwapProcessor:
                             "target_video": f2     # Video to swap into
                         }
                     )
-                    
-                    # Handle different output formats
-                    if isinstance(output, str):
-                        video_url = output
-                    elif isinstance(output, list) and len(output) > 0:
-                        first_item = output[0]
-                        if isinstance(first_item, str):
-                            video_url = first_item
-                        elif hasattr(first_item, 'url'):
-                            video_url = first_item.url  # type: ignore
-                        else:
-                            video_url = str(first_item)
-                    elif hasattr(output, 'url'):
-                        # FileOutput object
-                        video_url = output.url  # type: ignore
-                    elif hasattr(output, '__str__'):
-                        # Try converting to string
-                        video_url = str(output)
+                
+                # Handle different output formats
+                if isinstance(output, str):
+                    video_url = output
+                elif isinstance(output, list) and len(output) > 0:
+                    first_item = output[0]
+                    if isinstance(first_item, str):
+                        video_url = first_item
+                    elif hasattr(first_item, 'url'):
+                        video_url = first_item.url  # type: ignore
                     else:
-                        raise Exception(f"Unexpected output format: {type(output)}")
-                    
-                    print(f"[Replicate] ✅ Success with {model_name}")
-                    return video_url, model_name
-                    
-                except Exception as e:
-                    error_msg = str(e)
-                    try:
-                        if hasattr(e, 'detail'):
-                            error_msg = f"{error_msg} - {getattr(e, 'detail')}"
-                    except:
-                        pass
-                    print(f"[Replicate] ❌ {model_name} failed: {error_msg}")
-                    continue
+                        video_url = str(first_item)
+                elif hasattr(output, 'url'):
+                    # FileOutput object
+                    video_url = output.url  # type: ignore
+                elif hasattr(output, '__str__'):
+                    # Try converting to string
+                    video_url = str(output)
+                else:
+                    raise Exception(f"Unexpected output format: {type(output)}")
+                
+                print(f"[Replicate] ✅ Success with {model_name}")
+                return video_url, model_name
+                
+            except Exception as e:
+                error_msg = str(e)
+                try:
+                    if hasattr(e, 'detail'):
+                        error_msg = f"{error_msg} - {getattr(e, 'detail')}"
+                except:
+                    pass
+                print(f"[Replicate] ❌ {model_name} failed: {error_msg}")
+                continue
         
         raise Exception("All Replicate models failed")
     

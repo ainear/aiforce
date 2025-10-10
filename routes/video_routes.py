@@ -148,12 +148,13 @@ def get_providers():
             'huggingface': {
                 'name': 'HuggingFace Pro',
                 'models': [
-                    'tonyassi/vfs2-cpu',
-                    'MarkoVidrih/video-face-swap'
+                    'tonyassi/video-face-swap',
+                    'tonyassi/deep-fake-video'
                 ],
                 'timeout': '5-7 seconds per model',
                 'auto_fallback': True,
-                'supports_gender_filter': True
+                'supports_gender_filter': True,
+                'status': '✅ WORKING 2025'
             },
             'replicate': {
                 'name': 'Replicate Pro',
