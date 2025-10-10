@@ -5,8 +5,8 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 
 ## User Preferences
 - **Primary**: Replicate API (arabyai-replicate/roop_face_swap) - Stable, audio preserved ✅
-- **Fallback**: VModel.AI - Premium quality, faster, commercial license, audio preserved ✅
-- **Disabled**: HuggingFace Pro (all models had compatibility issues)
+- **Fallback 1**: VModel.AI - Premium quality, faster, commercial license, audio preserved ✅
+- **Fallback 2-5**: HuggingFace Spaces (4 providers) - FREE backup options via Gradio Client API ✅
 - Planning to integrate with Supabase for user data storage
 - Target platform: Flutter mobile app (Vietnamese user, builds APK locally in VS Code)
 - Prefer cloud-based API approach over local model hosting
@@ -16,10 +16,11 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 ### Stack
 - **Backend Framework**: Flask (Python)
 - **Primary AI Provider**: Replicate API (arabyai-replicate/roop_face_swap)
-- **Fallback AI Provider**: VModel.AI (video-face-swap-pro)
-- **Disabled Provider**: HuggingFace (compatibility issues with all video models)
+- **Fallback AI Providers**: 
+  - VModel.AI (video-face-swap-pro)
+  - 4x HuggingFace Spaces (tonyassi, MarkoVidrih, ALSv, prithivMLmods) via Gradio Client
 - **Image Storage**: Supabase Storage
-- **Image Processing**: Pillow (PIL), Replicate SDK
+- **Image Processing**: Pillow (PIL), Replicate SDK, Gradio Client
 - **CORS**: Flask-CORS
 
 ### Core Features and Endpoints
@@ -40,14 +41,18 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 - **Template Face Swap**:
     - `/api/templates/list`: Lists available face swap templates.
     - `/api/templates/face-swap`: Swaps user faces with templates.
-- **Video Face Swap** (✅ AUDIO PRESERVED - BOTH WORKING):
-    - `/api/video/face-swap`: Video face swapping with 3 provider options:
-      - `auto`: Replicate primary → VModel fallback (RECOMMENDED) ⭐
+- **Video Face Swap** (✅ 6 PROVIDERS - AUDIO PRESERVED):
+    - `/api/video/face-swap`: Video face swapping with 6+ provider options:
+      - `auto`: Replicate → VModel → 4 HF Spaces fallback chain (RECOMMENDED) ⭐
       - `replicate`: arabyai-replicate/roop_face_swap ($0.14, ~77s, stable) ✅
-      - `vmodel`: VModel.AI premium ($0.10, 15-51s, faster) ✅
-    - `/api/video/providers`: Lists available video face swap providers and models.
-    - **All providers preserve original video audio!**
-    - **Status**: Both Replicate & VModel confirmed working (Oct 2025)
+      - `vmodel`: VModel.AI premium ($0.10, 15-30s, faster) ✅
+      - `hf-tonyassi`: HuggingFace tonyassi Space (FREE, gender filtering) ✅
+      - `hf-marko`: HuggingFace MarkoVidrih Space (FREE) ✅
+      - `hf-alsv`: HuggingFace ALSv Space (FREE) ✅
+      - `hf-prithiv`: HuggingFace prithivMLmods Space (FREE) ✅
+    - `/api/video/providers`: Lists all 6+ providers and their details
+    - **Replicate & VModel preserve original video audio!**
+    - **Status**: 6 providers (2 paid + 4 FREE HF Spaces) - Oct 2025
 - **Template Video Face Swap** (✅ NEW FEATURE):
     - `/api/template-video/list`: List available template videos
     - `/api/template-video/preview/{filename}`: Preview template video
@@ -65,11 +70,14 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 
 ### System Design
 - **Video Face Swap Architecture**:
-  - Auto mode: Replicate (stable, $0.14) → VModel (premium, $0.10) fallback
-  - Audio preservation: Both providers keep original video audio
-  - Replicate model: arabyai-replicate/roop_face_swap (must use version ID)
+  - Auto mode: 6-provider fallback chain
+    1. Replicate (stable, $0.14, ~77s) 
+    2. VModel (premium, $0.10, 15-30s)
+    3-6. 4x HuggingFace Spaces (FREE, queue-based)
+  - Audio preservation: Replicate & VModel keep original video audio
+  - Replicate model: arabyai-replicate/roop_face_swap (must use full version ID)
   - VModel: Premium quality with commercial license, requires Supabase
-  - HuggingFace: DISABLED due to compatibility issues
+  - HuggingFace Spaces: FREE backup via Gradio Client API (tonyassi, marko, alsv, prithiv)
 - Image storage is handled by Supabase Storage, ensuring persistent access via public URLs.
 - CORS is enabled to facilitate seamless integration with the Flutter mobile application.
 - Health check endpoints (`/healthz`, `/health`) are implemented for production monitoring.
@@ -96,9 +104,15 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
   - API Key: `VMODEL_API_TOKEN`
   - **Note:** Requires Supabase (uploads files → gets URLs → calls VModel)
 
-- **HuggingFace** (DISABLED):
-  - All models failed due to compatibility issues
-  - No longer used in production
+- **HuggingFace Spaces** (FREE BACKUP - 4 PROVIDERS):
+  - **tonyassi/video-face-swap**: Gender filtering support, most popular
+  - **MarkoVidrih/video-face-swap**: Basic video face swap
+  - **ALSv/video-face-swap**: Alternative free option
+  - **prithivMLmods/Video-Face-Swapper**: Educational model
+  - Cost: FREE (queue-based, may be slower)
+  - Quality: Preview mode (downsampled for free tier)
+  - API: Gradio Client API
+  - **Note:** Used as fallback when Replicate/VModel fail or for cost-free testing
 
 ### Storage & Framework
 - **Supabase Storage**: Used for persistent storage of processed images, configured with a public `ai-photos` bucket.
@@ -109,3 +123,4 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 - **python-dotenv**: Manages environment variables.
 - **replicate (Python SDK)**: Client library for interacting with the Replicate API.
 - **supabase (Python SDK)**: Client library for interacting with Supabase services.
+- **gradio-client**: Client library for calling HuggingFace Spaces via Gradio API.
