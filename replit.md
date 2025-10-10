@@ -1,234 +1,7 @@
 # AI Photo Editing Backend API
 
-## Project Overview
-Flask-based REST API for AI-powered photo editing features including face swap, image upscaling, old photo restoration, cartoonify effects, and style transfer. Built to integrate with Flutter mobile apps.
-
-## Purpose
-Provide serverless AI image processing capabilities using Hugging Face Inference API models for a mobile app similar to Glam AI, with features like:
-- Face swapping
-- HD image upscaling (Real-ESRGAN)
-- Old photo restoration (GFPGAN)
-- Cartoonify and style transfer
-- Template-based transformations (Ghostface, Fashion, Graduate, etc.)
-- Future baby prediction
-- AI hugs generation
-- Professional headshots
-
-## Current State
-✅ Flask API server running on port 5000
-✅ **Replicate API integration (primary)** with Hugging Face fallback
-✅ **Supabase Storage integration** - Persistent image storage fully functional
-✅ All features fully working: HD upscale, restore, face swap, cartoonify, style transfer
-✅ Advanced endpoints: background removal, depth map, AI hugs, future baby, templates
-✅ Automatic fallback logic for maximum reliability
-✅ CORS enabled for cross-origin requests
-✅ Comprehensive API documentation updated for Replicate
-✅ Production-ready with robust error handling
-✅ **Web Testing UI** - Beautiful interface to test all API features
-✅ **Flutter Integration Guide** - Complete Flutter code examples and documentation
-
-## Recent Changes
-- **2025-10-09**: Flutter App Cleaned - 8 Features Only ✅
-  - Xóa 5 features không hoạt động (Face Swap, Depth Map, Colorize, Template Styles, Muscle Enhance)
-  - Giữ lại 8 features hoạt động 100%: HD Upscale, Restore, Cartoonify, Style Transfer, AI Hugs, Future Baby, Remove BG, Template Swap
-  - Sửa Template Face Swap với UI carousel đẹp (giống Ghostface)
-  - PageView carousel với dots indicator
-  - Modern UI với nút "+" để upload ảnh
-  - Code clean, không còn LSP errors
-  - Created FLUTTER_APP_CLEANED.md với hướng dẫn đầy đủ
-  
-- **2025-10-09**: Flutter App URL Update & Ready for Build ✅
-  - Updated Flutter app API URL to Dev URL (bypasses Replit Shield)
-  - New URL: `https://50114ea0-2452-46e2-9975-2bc7787870fc-00-1ggmf7wilwgae.pike.replit.dev`
-  - Verified all endpoints working correctly
-  - Created FLUTTER_APP_UPDATE_SUMMARY.md with build instructions
-  - App ready to build APK in VS Code local
-  - All 7 working features accessible from mobile app
-  
-- **2025-10-09**: Model Fixes & Error Handling ✅
-  - Fixed Cartoonify: Now uses SDXL with cartoon-specific prompts (working!)
-  - Fixed unavailable features: Face Swap, Template Face Swap, Depth Map, Colorize return 503 with helpful error messages
-  - Simplified error handling for better user experience
-  - Created FEATURES_STATUS_UPDATE.md with comprehensive status report
-  - **7 features working**: HD Upscale, Restore Photo, Cartoonify, Style Transfer, AI Hugs, Future Baby, Remove Background
-  - **6 features unavailable**: Face Swap, Template Face Swap, Depth Map, Colorize (model access issues)
-  
-- **2025-10-09**: Production Deployment Fix - Replit Shield Issue 🚨
-  - Identified root cause: Replit Shield blocking mobile app requests
-  - All features show "Network error" because of 307 redirects to Shield
-  - Solution: Disable Replit Shield in Deployment settings
-  - Created comprehensive fix guide (PRODUCTION_DEPLOYMENT_FIX.md)
-  - Backend API working perfectly, issue is external access only
-  
-- **2025-10-09**: Template Face Swap Gallery Fix ✅
-  - Fixed template images not displaying in mobile app
-  - Changed API response from nested object to flat list structure
-  - Added full image URLs with base_url for CachedNetworkImage
-  - Enhanced TemplateModel parser to support multiple field names
-  - API now returns 15 templates (9 female, 3 male, 3 mixed)
-  - Template gallery fully functional with category filters
-  
-- **2025-10-09**: Mobile App API Fixes Complete ✅
-  - Fixed 307 redirect errors and network issues
-  - Switched backend from Dev mode to Gunicorn production server
-  - Enhanced CORS configuration for mobile app compatibility
-  - Updated Flutter Dio client with followRedirects and proper headers
-  - Added API logging interceptor for debugging
-  - All mobile features now working correctly
-  
-- **2025-10-09**: Android Build Fixes Complete ✅
-  - Fixed 5 critical build errors for APK compilation
-  - Created complete Android resources structure
-  - Generated app launcher icons (5 densities) with Python Pillow
-  - Created styles.xml (LaunchTheme, NormalTheme)
-  - Created launch_background.xml drawables
-  - All Flutter code errors fixed (CardTheme, ClipRRect)
-  - Upgraded AGP to 8.3.0 and Gradle to 8.4
-  - APK build successful on local machine
-  
-- **2025-10-09**: Deployment Health Check Fix ✅
-  - Added `/healthz` and `/health` endpoints for production health checks
-  - Installed Gunicorn WSGI server for production deployment
-  - Fixed route bug causing static file serving issues
-  - Configured Autoscale deployment with Gunicorn (2 workers, 120s timeout)
-  - Ready to republish without health check failures
-  
-- **2025-10-09**: Flutter Mobile App Complete ✅
-  - Created complete Flutter app with 11 AI features
-  - Beautiful UI/UX with Material 3 design
-  - 3 main screens: Home, Feature Detail, Template Gallery
-  - Full API integration with all backend endpoints
-  - Android & iOS ready with permissions configured
-  - 1800+ lines of production-ready code
-  - Complete documentation (README, QUICKSTART)
-  - All features matching Glam AI reference images
-  
-- **2025-10-09**: Supabase Storage Integration Complete ✅
-  - Created Supabase project and storage bucket "ai-photos"
-  - Configured public access policies (SELECT & INSERT)
-  - Added SUPABASE_URL and SUPABASE_KEY to Replit Secrets
-  - Implemented SupabaseStorage module for upload/delete operations
-  - Added `/api/ai/process-and-save` endpoint with storage support
-  - Successfully tested image upload and public URL access
-  - Created comprehensive Flutter integration guide
-  - All documentation updated (SUPABASE_INTEGRATION.md, FLUTTER_INTEGRATION.md)
-  
-- **2025-10-09**: Imported to Replit & Setup Complete
-  - Successfully imported ImageForge project from ZIP file
-  - Installed all Python dependencies (Flask, Replicate, Pillow, etc.)
-  - Configured REPLICATE_API_TOKEN secret
-  - Set up Flask server workflow on port 5000
-  - Configured deployment for autoscale (production-ready)
-  - Web UI fully functional and tested
-  
-- **2025-10-09**: Template Face Swap System Added
-  - Created template gallery with 12 professional photos (female/male/mixed)
-  - API endpoints for listing templates and face swapping with templates
-  - Beautiful template gallery UI with category organization
-  - Live template preview and selection
-  - Face upload with preview before swap
-  - Production-ready template face swap feature
-  
-- **2025-10-09**: Web Testing UI Added
-  - Created beautiful web interface to test all API features
-  - Tabbed layout: Basic Features, Advanced Features & Template Face Swap
-  - Live image upload and result preview
-  - Download processed images
-  - Responsive design with gradient UI
-  - All features accessible from browser
-  
-- **2025-10-09**: Replicate API Integration (Major Update)
-  - Migrated to Replicate API as primary provider
-  - Implemented automatic fallback to Hugging Face
-  - All features now fully functional (cartoonify, style transfer, face swap)
-  - Added ReplicateProcessor module with robust error handling
-  - Updated all endpoints with dual-provider support
-  - Updated documentation for production readiness
-  
-- **2025-10-08**: Initial project setup
-  - Created Flask application with image processing endpoints
-  - Integrated Hugging Face Inference API
-  - Added basic and advanced feature routes
-  - Created API integration documentation
-  - Set up workflow for running server
-
-## Architecture
-
-### Stack
-- **Backend Framework**: Flask (Python)
-- **Primary AI Provider**: Replicate API (stable, feature-complete)
-- **Fallback AI Provider**: Hugging Face Inference API
-- **Image Storage**: Supabase Storage (persistent, public URLs)
-- **Image Processing**: Pillow (PIL), Replicate SDK
-- **CORS**: Flask-CORS for Flutter app integration
-
-### Project Structure
-```
-.
-├── flutter_app/                # Flutter mobile app (NEW!)
-│   ├── lib/
-│   │   ├── main.dart
-│   │   ├── config/api_config.dart
-│   │   ├── models/
-│   │   ├── services/api_service.dart
-│   │   ├── screens/
-│   │   └── widgets/
-│   ├── android/
-│   ├── ios/
-│   ├── pubspec.yaml
-│   ├── README.md
-│   └── QUICKSTART.md
-├── app.py                      # Main Flask application
-├── routes/
-│   ├── __init__.py
-│   └── advanced_features.py    # Advanced AI endpoints
-├── utils/
-│   ├── __init__.py
-│   ├── image_processor.py      # Image processing utilities
-│   ├── replicate_processor.py  # Replicate API integration
-│   ├── supabase_storage.py     # Supabase Storage integration
-│   └── response_helper.py      # Response formatting utilities
-├── static/                     # Web UI files
-│   ├── index.html             # Testing interface
-│   ├── styles.css             # UI styling
-│   └── script.js              # API integration JS
-├── test_api.py                 # API testing script
-├── API_INTEGRATION.md          # Flutter integration guide
-├── FLUTTER_INTEGRATION.md      # Complete Flutter code examples
-├── SUPABASE_INTEGRATION.md     # Supabase setup & usage guide
-├── IMPLEMENTATION_NOTES.md     # Technical details & architecture
-├── flutter_example.dart        # Quick Flutter code example
-├── .env.example                # Environment variables template
-└── replit.md                   # This file
-```
-
-### Endpoints
-
-**Basic Features:**
-- `/api/ai/hd-image` - Upscale images 2x/4x ✅ (Replicate+HF)
-- `/api/ai/fix-old-photo` - Restore old/damaged photos ✅ (Replicate+HF)
-- `/api/ai/cartoonify` - Cartoon/Anime style ✅ (Replicate)
-- `/api/ai/swap-face` - Face swapping between images ✅ (Replicate+HF)
-- `/api/ai/style-transfer` - Artistic style transfer ✅ (Replicate)
-
-**Advanced Features:**
-- `/api/advanced/ai-hugs` - Generate hugging photos ✅ (Replicate+HF)
-- `/api/advanced/future-baby` - Baby face prediction ✅ (Replicate+HF)
-- `/api/advanced/template-styles` - Template transformations ✅ (Replicate+HF)
-- `/api/advanced/muscle-enhance` - Fitness body ✅ (Replicate+HF)
-- `/api/advanced/remove-background` - Background removal ✅ (Replicate+HF)
-- `/api/advanced/depth-map` - Depth mapping ✅ (Replicate+HF)
-- `/api/advanced/colorize` - Colorize B&W images ⚠️ (HF only)
-
-**Template Face Swap:**
-- `/api/templates/list` - List all face swap templates ✅
-- `/api/templates/face-swap` - Swap user face with template ✅ (Replicate+HF)
-
-**Storage Endpoints:**
-- `/api/ai/process-and-save` - Process image & optionally save to Supabase ✅
-  - Supports all AI features (hd-upscale, cartoonify, restore, remove-bg)
-  - Returns storage URL when `save_storage=true`
-  - Returns image bytes when `save_storage=false`
+## Overview
+This project is a Flask-based REST API providing AI-powered photo editing features for integration with Flutter mobile applications. It aims to offer serverless AI image processing capabilities, similar to Glam AI, utilizing models from Replicate and Hugging Face. Key features include face swapping, image upscaling, old photo restoration, cartoonify effects, style transfer, template-based transformations, and video face swapping. The project emphasizes robust error handling, automatic fallback mechanisms, and persistent image storage.
 
 ## User Preferences
 - Primary: Replicate API for stable, reliable AI processing
@@ -237,61 +10,60 @@ Provide serverless AI image processing capabilities using Hugging Face Inference
 - Target platform: Flutter mobile app
 - Prefer cloud-based API approach (Replicate/HF) over local model hosting
 
-## Dependencies
-- flask - Web framework
-- flask-cors - CORS support
-- pillow - Image processing
-- requests - HTTP client for API calls
-- python-dotenv - Environment configuration
-- replicate - Replicate API SDK
-- supabase - Supabase client for storage
+## System Architecture
 
-## Environment Variables
-Required in `.env` / Replit Secrets:
-- `REPLICATE_API_TOKEN` - Replicate API token (primary provider) ✅
-- `HUGGINGFACE_API_TOKEN` - Hugging Face API token (Pro recommended)
-- `SUPABASE_URL` - Supabase project URL ✅
-- `SUPABASE_KEY` - Supabase API key (anon/public) ✅
-- `SESSION_SECRET` - Flask session secret
+### Stack
+- **Backend Framework**: Flask (Python)
+- **Primary AI Provider**: Replicate API
+- **Fallback AI Provider**: Hugging Face Inference API
+- **Image Storage**: Supabase Storage
+- **Image Processing**: Pillow (PIL), Replicate SDK
+- **CORS**: Flask-CORS
 
-## Integration Notes
+### Core Features and Endpoints
+- **Basic Photo Editing**:
+    - `/api/ai/hd-image`: Upscales images.
+    - `/api/ai/fix-old-photo`: Restores old photos.
+    - `/api/ai/cartoonify`: Applies cartoon/anime styles.
+    - `/api/ai/swap-face`: Swaps faces between images.
+    - `/api/ai/style-transfer`: Applies artistic style transfer.
+- **Advanced Photo Editing**:
+    - `/api/advanced/ai-hugs`: Generates hugging photos.
+    - `/api/advanced/future-baby`: Predicts future baby faces.
+    - `/api/advanced/template-styles`: Applies template transformations.
+    - `/api/advanced/muscle-enhance`: Enhances body physique.
+    - `/api/advanced/remove-background`: Removes image backgrounds.
+    - `/api/advanced/depth-map`: Generates depth maps.
+    - `/api/advanced/colorize`: Colorizes black and white images.
+- **Template Face Swap**:
+    - `/api/templates/list`: Lists available face swap templates.
+    - `/api/templates/face-swap`: Swaps user faces with templates.
+- **Video Face Swap**:
+    - `/api/video/face-swap`: Performs video face swapping with multi-model fallback.
+    - `/api/video/providers`: Lists available video face swap models.
+- **Storage Integration**:
+    - `/api/ai/process-and-save`: Processes images and optionally saves to Supabase Storage, returning a public URL.
 
-### For Flutter App
-1. Use multipart/form-data for image uploads
-2. All endpoints return PNG image data on success
-3. Error responses are JSON with `error` and `details` fields
-4. Processing time: 5-30 seconds depending on model
-5. See `API_INTEGRATION.md` for Flutter code examples
+### UI/UX and Testing
+- A comprehensive web testing UI (`static/index.html`) is provided for live testing of all API features, including image upload, result preview, and download options.
+- The Flutter mobile application is designed with Material 3, featuring a modern UI with three main screens: Home, Feature Detail, and Template Gallery.
 
-### Alternative Services
-- **Replicate API**: ✅ Integrated as primary provider
-- **Hugging Face API**: ✅ Integrated as fallback provider
-- **Supabase Storage**: ✅ Fully integrated for permanent image storage
-  - Bucket: `ai-photos` (public read access)
-  - Automatic URL generation for stored images
-  - User-organized file structure: `user-id/feature_timestamp_uuid.png`
+### System Design
+- The architecture supports automatic fallback from Replicate to Hugging Face for enhanced reliability.
+- Image storage is handled by Supabase Storage, ensuring persistent access via public URLs.
+- CORS is enabled to facilitate seamless integration with the Flutter mobile application.
+- Health check endpoints (`/healthz`, `/health`) are implemented for production monitoring.
+- The system is designed for production readiness, utilizing Gunicorn for deployment.
 
-## Development Commands
-- Run server: `python app.py`
-- Test endpoints: `python test_api.py`
-- Port: 5000 (webview enabled)
-
-## Next Steps (Future Phase)
-- ✅ Supabase Storage integration (COMPLETE)
-- ✅ Flutter integration documentation (COMPLETE)
-- ✅ Deploy with production WSGI server (COMPLETE - Gunicorn)
-- ✅ Flutter app with all features (COMPLETE)
-- Add user authentication (Supabase Auth)
-- Implement rate limiting
-- Create payment integration for premium features
-- Add job queue for batch processing
-- Optimize model selection based on performance
-- Add image caching layer
-- Add image gallery/history feature
-
-## Notes
-- Server runs in debug mode for development
-- All requests require valid Hugging Face API token
-- CORS enabled for all origins (configure for production)
-- Images processed in memory, no local storage currently
-- Models load on-demand via Hugging Face Inference API
+## External Dependencies
+- **Replicate API**: Primary AI model provider for various image and video processing tasks.
+- **Hugging Face Inference API**: Secondary/fallback AI model provider, including specific models for video face swapping (e.g., `tonyassi/video-face-swap`, `yoshibomball123/Video-Face-Swap`).
+- **Supabase Storage**: Used for persistent storage of processed images, configured with a public `ai-photos` bucket.
+- **Flask**: Python web framework.
+- **Flask-CORS**: Enables Cross-Origin Resource Sharing.
+- **Pillow (PIL)**: Python Imaging Library for image manipulation.
+- **requests**: HTTP client for external API calls.
+- **python-dotenv**: Manages environment variables.
+- **replicate (Python SDK)**: Client library for interacting with the Replicate API.
+- **supabase (Python SDK)**: Client library for interacting with Supabase services.
+- **gradio-client**: Used for accessing Hugging Face Spaces API.
