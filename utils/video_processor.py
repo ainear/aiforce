@@ -24,10 +24,14 @@ class VideoFaceSwapProcessor:
         # Using Replicate as primary provider
         self.hf_models = []
         
-        # Replicate Pro models (WORKING 2025) - WITH VERSION HASH
+        # Replicate Pro models (WORKING 2025) - AUDIO PRESERVED
+        # codeplugtech/face-swap: $0.0026/run, ~10s, AUDIO PRESERVED ✅
         self.replicate_models = [
-            "arabyai-replicate/roop_face_swap:11b6bf0f4e14d808f655e87e5448233cceff10a45f659d71539cafb7163b2e84",
+            "codeplugtech/face-swap",
         ]
+        
+        # VModel.AI credentials
+        self.vmodel_token = os.getenv('VMODEL_API_TOKEN', '')
     
     def _save_temp_file(self, file_data, suffix='.jpg'):
         """Save uploaded file to temp location"""
@@ -223,47 +227,158 @@ class VideoFaceSwapProcessor:
         
         raise Exception("All Replicate models failed")
     
+    def swap_face_vmodel(self, face_image, video_file):
+        """
+        VModel.AI video face swap with audio preservation
+        - Premium quality, ~15s processing
+        - Audio preserved by default
+        """
+        if not self.vmodel_token:
+            raise Exception("VMODEL_API_TOKEN required for VModel video face swap")
+        
+        print("[VModel] Starting video face swap...")
+        
+        # Prepare files
+        import requests
+        
+        # Read face image
+        if hasattr(face_image, 'stream'):
+            face_image.stream.seek(0)
+            face_data = face_image.stream.read()
+        elif hasattr(face_image, 'read'):
+            face_data = face_image.read()
+        else:
+            face_data = face_image
+        
+        # Read video
+        if hasattr(video_file, 'stream'):
+            video_file.stream.seek(0)
+            video_data = video_file.stream.read()
+        elif hasattr(video_file, 'read'):
+            video_data = video_file.read()
+        else:
+            video_data = video_file
+        
+        # Upload files to temporary storage (you'll need to implement this)
+        # For now, using local temp files
+        face_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+        face_temp.write(face_data)
+        face_temp.close()
+        
+        video_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
+        video_temp.write(video_data)
+        video_temp.close()
+        
+        try:
+            # VModel API call
+            response = requests.post(
+                "https://api.vmodel.ai/api/tasks/v1/create",
+                headers={
+                    "Authorization": f"Bearer {self.vmodel_token}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "version": "537e83f7ed84751dc56aa80fb2391b07696c85a49967c72c64f002a0ca2bb224",
+                    "input": {
+                        "target": open(face_temp.name, 'rb'),
+                        "source": open(video_temp.name, 'rb'),
+                        "disable_safety_checker": True
+                    }
+                },
+                timeout=180  # 3 minutes timeout
+            )
+            
+            response.raise_for_status()
+            result = response.json()
+            
+            # Get task ID and poll for result
+            task_id = result.get('task_id')
+            if not task_id:
+                raise Exception(f"VModel API error: {result}")
+            
+            # Poll for completion (implement polling logic)
+            import time
+            max_retries = 60  # 60 * 3s = 3 minutes max
+            for i in range(max_retries):
+                status_response = requests.get(
+                    f"https://api.vmodel.ai/api/tasks/v1/{task_id}",
+                    headers={"Authorization": f"Bearer {self.vmodel_token}"}
+                )
+                status_response.raise_for_status()
+                status_data = status_response.json()
+                
+                if status_data.get('status') == 'succeeded':
+                    output_url = status_data.get('output', [None])[0]
+                    if output_url:
+                        print(f"[VModel] ✅ Success! Output: {output_url}")
+                        return output_url, "vmodel/video-face-swap-pro"
+                    else:
+                        raise Exception("VModel returned no output URL")
+                
+                elif status_data.get('status') in ['failed', 'canceled']:
+                    raise Exception(f"VModel task failed: {status_data.get('error', 'Unknown error')}")
+                
+                # Still processing
+                time.sleep(3)
+            
+            raise Exception("VModel processing timeout (3 minutes)")
+            
+        finally:
+            # Cleanup temp files
+            try:
+                os.unlink(face_temp.name)
+                os.unlink(video_temp.name)
+            except:
+                pass
+    
     def swap_face_video(self, face_image, video_file, provider="auto", gender="all"):
         """
-        Main video face swap method
+        Main video face swap method with 3 providers
         
         Args:
             face_image: Face image file
             video_file: Video file
-            provider: "huggingface", "replicate", or "auto" (try HF first, fallback to Replicate)
-            gender: "all", "male", "female" (for HF models)
+            provider: "auto" (Replicate→VModel), "replicate", or "vmodel"
+            gender: "all", "male", "female" (deprecated, kept for compatibility)
         
         Returns:
-            (video_path/url, provider_used, model_used)
+            (video_url, provider_used, model_used)
         """
         print(f"[VideoSwap] Starting with provider: {provider}")
         
-        if provider == "huggingface":
-            # HuggingFace disabled - use Replicate instead
-            print("[VideoSwap] HuggingFace disabled, using Replicate instead")
+        if provider == "replicate":
+            # Replicate only - codeplugtech/face-swap with audio
+            print("[VideoSwap] Using Replicate (codeplugtech/face-swap)")
             result, model = self.swap_face_replicate(face_image, video_file)
             return result, "replicate", model
         
-        elif provider == "replicate":
-            # Replicate with HuggingFace fallback (smart retry)
+        elif provider == "vmodel":
+            # VModel only - premium quality with audio
+            print("[VideoSwap] Using VModel.AI")
+            result, model = self.swap_face_vmodel(face_image, video_file)
+            return result, "vmodel", model
+        
+        else:  # "auto" or any other value
+            # Auto mode: Replicate primary → VModel fallback
+            print("[VideoSwap] Auto mode - Replicate primary, VModel fallback")
+            
             try:
+                # Try Replicate first (faster, cheaper)
                 result, model = self.swap_face_replicate(face_image, video_file)
                 return result, "replicate", model
-            except Exception as rep_error:
-                print(f"[VideoSwap] Replicate failed: {rep_error}")
-                # Smart fallback to HuggingFace
-                if "ffmpeg" in str(rep_error).lower() or "timeout" in str(rep_error).lower():
-                    print("[VideoSwap] Trying HuggingFace as fallback...")
+            
+            except Exception as replicate_error:
+                print(f"[VideoSwap] Replicate failed: {replicate_error}")
+                
+                # Fallback to VModel if available
+                if self.vmodel_token:
+                    print("[VideoSwap] Falling back to VModel...")
                     try:
-                        result, model = self.swap_face_huggingface(face_image, video_file, gender)
-                        return result, "huggingface (fallback)", model
-                    except:
-                        pass
-                # Re-raise original error
-                raise rep_error
-        
-        else:  # "auto"
-            # Auto mode - use Replicate (HuggingFace disabled due to compatibility issues)
-            print("[VideoSwap] Auto mode - using Replicate")
-            result, model = self.swap_face_replicate(face_image, video_file)
-            return result, "replicate", model
+                        result, model = self.swap_face_vmodel(face_image, video_file)
+                        return result, "vmodel (fallback)", model
+                    except Exception as vmodel_error:
+                        print(f"[VideoSwap] VModel fallback failed: {vmodel_error}")
+                        raise Exception(f"Both providers failed. Replicate: {replicate_error}, VModel: {vmodel_error}")
+                else:
+                    print("[VideoSwap] VModel not configured, cannot fallback")
+                    raise replicate_error

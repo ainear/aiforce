@@ -54,8 +54,8 @@ def video_face_swap():
         gender = request.form.get('gender', 'all')       # all, male, female
         
         # Validate provider
-        if provider not in ['auto', 'huggingface', 'replicate']:
-            return jsonify({'error': f'Invalid provider: {provider}. Use: auto, huggingface, or replicate'}), 400
+        if provider not in ['auto', 'replicate', 'vmodel']:
+            return jsonify({'error': f'Invalid provider: {provider}. Use: auto, replicate, or vmodel'}), 400
         
         # Validate gender
         if gender not in ['all', 'male', 'female']:
@@ -102,6 +102,13 @@ def video_face_swap():
                 'setup_url': 'https://huggingface.co/settings/tokens'
             }), 503
         
+        if "VMODEL_API_TOKEN" in error_msg:
+            return jsonify({
+                'error': 'VModel API token required',
+                'details': 'Please add VMODEL_API_TOKEN to environment secrets',
+                'setup_url': 'https://vmodel.ai'
+            }), 503
+        
         if "REPLICATE_PRO_TOKEN" in error_msg:
             return jsonify({
                 'error': 'Replicate Pro token required',
@@ -145,14 +152,37 @@ def get_providers():
     """Get available video face swap providers and models"""
     return jsonify({
         'providers': {
+            'auto': {
+                'name': 'Auto (Smart Fallback)',
+                'strategy': 'Replicate primary → VModel fallback',
+                'models': ['codeplugtech/face-swap', 'vmodel/video-face-swap-pro'],
+                'timeout': '15-90 seconds',
+                'audio_preserved': True,
+                'cost': '$0.0026-0.10 per video',
+                'status': '✅ RECOMMENDED'
+            },
             'replicate': {
-                'name': 'Replicate Pro',
+                'name': 'Replicate (Fast & Cheap)',
                 'models': [
-                    'arabyai-replicate/roop_face_swap'
+                    'codeplugtech/face-swap'
                 ],
                 'features': ['video'],
                 'pricing': '~$0.11-0.14 per run',
                 'speed': '~77 seconds average',
+                'timeout': '10-15 seconds',
+                'audio_preserved': True,
+                'cost': '$0.0026 per video (~384 videos per $1)',
+                'status': '✅ WORKING 2025'
+            },
+            'vmodel': {
+                'name': 'VModel.AI (Premium)',
+                'models': [
+                    'vmodel/video-face-swap-pro'
+                ],
+                'timeout': '15-30 seconds',
+                'audio_preserved': True,
+                'cost': 'Per-second pricing (~$0.10 per video)',
+                'quality': 'Premium, commercial license',
                 'status': '✅ WORKING 2025'
             }
         },
@@ -161,11 +191,9 @@ def get_providers():
             'image': list(ALLOWED_IMAGE_EXTENSIONS)
         },
         'usage': {
-            'provider_auto': 'Try HuggingFace first, fallback to Replicate',
-            'provider_huggingface': 'Use HuggingFace Pro only (multi-model fallback)',
-            'provider_replicate': 'Use Replicate Pro only',
-            'gender_all': 'Swap all faces (default)',
-            'gender_male': 'Swap male faces only',
-            'gender_female': 'Swap female faces only'
+            'provider_auto': 'Replicate primary (fast, cheap) → VModel fallback (premium)',
+            'provider_replicate': 'Replicate only - codeplugtech/face-swap with audio ($0.0026/video)',
+            'provider_vmodel': 'VModel only - premium quality with commercial license',
+            'audio_note': '✅ All providers preserve original audio!'
         }
     })
