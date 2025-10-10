@@ -329,28 +329,54 @@ class VideoFaceSwapProcessor:
             
             # Poll for completion
             import time
+            
+            # Small delay before first check (let API index the task)
+            time.sleep(2)
+            
             max_retries = 60  # 60 * 3s = 3 minutes max
             for i in range(max_retries):
-                status_response = requests.get(
-                    f"https://api.vmodel.ai/api/tasks/v1/{task_id}",
-                    headers={"Authorization": f"Bearer {self.vmodel_token}"}
-                )
-                status_response.raise_for_status()
-                status_data = status_response.json()
-                
-                if status_data.get('status') == 'succeeded':
-                    output_url = status_data.get('output', [None])[0]
-                    if output_url:
-                        print(f"[VModel] ✅ Success! Output: {output_url}")
-                        return output_url, "vmodel/video-face-swap-pro"
+                try:
+                    status_response = requests.get(
+                        f"https://api.vmodel.ai/api/tasks/v1/{task_id}",
+                        headers={"Authorization": f"Bearer {self.vmodel_token}"}
+                    )
+                    
+                    # Log response for debugging
+                    print(f"[VModel] Status check #{i+1}: HTTP {status_response.status_code}")
+                    
+                    status_response.raise_for_status()
+                    status_data = status_response.json()
+                    
+                    # VModel may return nested response like create endpoint
+                    if 'result' in status_data and isinstance(status_data['result'], dict):
+                        # Nested format: {'code': 200, 'result': {...}}
+                        task_status = status_data['result']
                     else:
-                        raise Exception("VModel returned no output URL")
-                
-                elif status_data.get('status') in ['failed', 'canceled']:
-                    raise Exception(f"VModel task failed: {status_data.get('error', 'Unknown error')}")
-                
-                # Still processing
-                time.sleep(3)
+                        # Direct format
+                        task_status = status_data
+                    
+                    print(f"[VModel] Status: {task_status.get('status', 'unknown')}")
+                    
+                    if task_status.get('status') == 'succeeded':
+                        output_url = task_status.get('output', [None])[0]
+                        if output_url:
+                            print(f"[VModel] ✅ Success! Output: {output_url}")
+                            return output_url, "vmodel/video-face-swap-pro"
+                        else:
+                            raise Exception("VModel returned no output URL")
+                    
+                    elif task_status.get('status') in ['failed', 'canceled']:
+                        raise Exception(f"VModel task failed: {task_status.get('error', 'Unknown error')}")
+                    
+                    # Still processing
+                    time.sleep(3)
+                    
+                except requests.exceptions.HTTPError as e:
+                    if e.response.status_code == 404:
+                        print(f"[VModel] Task not found yet (404), retrying... ({i+1}/{max_retries})")
+                        time.sleep(5)  # Longer delay on 404
+                        continue
+                    raise
             
             raise Exception("VModel processing timeout (3 minutes)")
             
