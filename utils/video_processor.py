@@ -18,19 +18,17 @@ class VideoFaceSwapProcessor:
     def __init__(self):
         self.hf_pro_token = os.getenv('HUGGINGFACE_PRO_TOKEN', '')
         self.replicate_pro_token = os.getenv('REPLICATE_PRO_TOKEN', '')
-        self.hf_timeout = 7  # 7 seconds timeout cho mỗi HF model
+        self.hf_timeout = 60  # 60 seconds timeout for HF models (video processing takes time)
         
         # Hugging Face Pro models (order by priority)
+        # NOTE: tonyassi/video-face-swap is a UI wrapper, not an API
+        # Use the actual API model: tonyassi/vfs2-cpu
         self.hf_models = [
             {
-                "name": "tonyassi/video-face-swap",
+                "name": "tonyassi/vfs2-cpu",
                 "params": ["input_image", "input_video", "gender"],
-                "video_format": "gradio"
-            },
-            {
-                "name": "tonyassi/deep-fake-video",
-                "params": ["input_image", "input_video"],
-                "video_format": "gradio"
+                "video_format": "dict",
+                "use_submit": True
             }
         ]
         
@@ -66,23 +64,34 @@ class VideoFaceSwapProcessor:
             )
             
             # Prepare arguments based on model config
-            if video_format == "gradio":
-                # tonyassi models use gradio format
-                if "gender" in params:
-                    # video-face-swap with gender filter
-                    result = client.predict(
-                        handle_file(face_image_path),
-                        handle_file(video_path),
-                        gender if gender != "all" else "all",
-                        api_name="/predict"
-                    )
-                else:
-                    # deep-fake-video (no gender)
-                    result = client.predict(
-                        handle_file(face_image_path),
-                        handle_file(video_path),
-                        api_name="/predict"
-                    )
+            use_submit = model_config.get("use_submit", False)
+            
+            if video_format == "dict" and use_submit:
+                # tonyassi/vfs2-cpu format with submit()
+                job = client.submit(
+                    input_image=handle_file(face_image_path),
+                    input_video={"video": handle_file(video_path)},
+                    device='cpu',
+                    selector='many',
+                    gender=gender if gender != "all" else None,
+                    race=None,
+                    order=None,
+                    api_name="/predict"
+                )
+                # Wait for result with timeout
+                timeout_start = time.time()
+                while not job.done():
+                    if time.time() - timeout_start > self.hf_timeout:
+                        raise TimeoutError(f"Model took too long")
+                    time.sleep(0.5)
+                
+                if not job.status().success:
+                    raise Exception("Job failed")
+                
+                result = job.outputs()[0]
+                # Extract video path from dict result
+                if isinstance(result, dict) and "video" in result:
+                    result = result["video"]
             else:
                 # Default fallback
                 result = client.predict(

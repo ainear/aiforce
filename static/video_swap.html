@@ -474,7 +474,7 @@
             // Get estimated time based on provider
             const estimatedTimes = {
                 'auto': { time: 90, msg: '~1-2 minutes (HuggingFace → Replicate fallback)' },
-                'huggingface': { time: 30, msg: '~30 seconds (Fast CPU processing)' },
+                'huggingface': { time: 60, msg: '~30-60 seconds (CPU processing)' },
                 'replicate': { time: 90, msg: '~1-2 minutes (High quality GPU)' }
             };
             const estimate = estimatedTimes[provider] || estimatedTimes['auto'];
