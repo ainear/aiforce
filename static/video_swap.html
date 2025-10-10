@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Face Swap Test - AI Photo API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .upload-box {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .upload-box:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .upload-box input[type="file"] {
+            display: none;
+        }
+
+        .upload-box .icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .upload-box .label {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .upload-box .hint {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .preview-container {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        .preview-container img,
+        .preview-container video {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .filename {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .options-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .option-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .option-group select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .option-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .provider-info {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .swap-button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .swap-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .swap-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            display: block;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            animation: progress 2s infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        .result-section {
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-header h3 {
+            color: #333;
+        }
+
+        .result-info {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .info-badge strong {
+            color: #667eea;
+        }
+
+        .result-video {
+            width: 100%;
+            max-height: 500px;
+            border-radius: 15px;
+            background: #000;
+        }
+
+        .download-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #4caf50;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+
+        .download-button:hover {
+            background: #45a049;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            opacity: 0.9;
+            transition: opacity 0.3s;
+        }
+
+        .back-link a:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .upload-section,
+            .options-section {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Video Face Swap Test</h1>
+            <p>Test HuggingFace Pro & Replicate Pro APIs</p>
+        </div>
+
+        <div class="card">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="upload-box" onclick="document.getElementById('faceInput').click()">
+                    <input type="file" id="faceInput" accept="image/*" onchange="handleFaceUpload(event)">
+                    <div class="icon">👤</div>
+                    <div class="label">Upload Face Image</div>
+                    <div class="hint">JPG, PNG, WEBP</div>
+                    <div id="facePreview" class="preview-container"></div>
+                    <div id="faceFilename" class="filename"></div>
+                </div>
+
+                <div class="upload-box" onclick="document.getElementById('videoInput').click()">
+                    <input type="file" id="videoInput" accept="video/*" onchange="handleVideoUpload(event)">
+                    <div class="icon">🎥</div>
+                    <div class="label">Upload Video</div>
+                    <div class="hint">MP4, AVI, MOV, WEBM</div>
+                    <div id="videoPreview" class="preview-container"></div>
+                    <div id="videoFilename" class="filename"></div>
+                </div>
+            </div>
+
+            <!-- Options Section -->
+            <div class="options-section">
+                <div class="option-group">
+                    <label for="providerSelect">Provider</label>
+                    <select id="providerSelect" onchange="updateProviderInfo()">
+                        <option value="auto">Auto (HF → Replicate)</option>
+                        <option value="huggingface">HuggingFace Pro</option>
+                        <option value="replicate">Replicate Pro</option>
+                    </select>
+                    <div class="provider-info" id="providerInfo">
+                        Try HF first with 5-7s timeout, fallback to Replicate
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label for="genderSelect">Gender Filter</label>
+                    <select id="genderSelect">
+                        <option value="all">All Faces</option>
+                        <option value="male">Male Only</option>
+                        <option value="female">Female Only</option>
+                    </select>
+                    <div class="provider-info">
+                        Gender filter works with HuggingFace provider
+                    </div>
+                </div>
+            </div>
+
+            <!-- Swap Button -->
+            <button class="swap-button" id="swapButton" onclick="swapFace()" disabled>
+                Select Face & Video to Start
+            </button>
+
+            <!-- Status -->
+            <div class="status" id="status"></div>
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-bar-fill"></div>
+            </div>
+
+            <!-- Result Section -->
+            <div class="result-section" id="resultSection">
+                <div class="result-header">
+                    <h3>✅ Result</h3>
+                </div>
+                <div class="result-info" id="resultInfo"></div>
+                <video id="resultVideo" class="result-video" controls></video>
+                <a id="downloadLink" class="download-button" style="display:none;" download="face_swapped_video.mp4">
+                    📥 Download Video
+                </a>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="/">← Back to Main API Test</a>
+        </div>
+    </div>
+
+    <script>
+        let faceFile = null;
+        let videoFile = null;
+
+        function handleFaceUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                faceFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('facePreview').innerHTML = 
+                        `<img src="${e.target.result}" alt="Face preview">`;
+                    document.getElementById('faceFilename').textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+                updateButton();
+            }
+        }
+
+        function handleVideoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                videoFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('videoPreview').innerHTML = 
+                        `<video src="${e.target.result}" muted></video>`;
+                    document.getElementById('videoFilename').textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+                updateButton();
+            }
+        }
+
+        function updateButton() {
+            const button = document.getElementById('swapButton');
+            if (faceFile && videoFile) {
+                button.disabled = false;
+                button.textContent = '🎬 Swap Face in Video';
+            } else {
+                button.disabled = true;
+                button.textContent = 'Select Face & Video to Start';
+            }
+        }
+
+        function updateProviderInfo() {
+            const provider = document.getElementById('providerSelect').value;
+            const infoDiv = document.getElementById('providerInfo');
+            
+            const infos = {
+                'auto': 'Try HF first with 5-7s timeout, fallback to Replicate',
+                'huggingface': 'Multi-model fallback (tonyassi → yoshibomball123)',
+                'replicate': 'Stable & reliable (yan-ops, cdingram models)'
+            };
+            
+            infoDiv.textContent = infos[provider];
+        }
+
+        async function swapFace() {
+            if (!faceFile || !videoFile) {
+                showStatus('Please select both face image and video', 'error');
+                return;
+            }
+
+            const provider = document.getElementById('providerSelect').value;
+            const gender = document.getElementById('genderSelect').value;
+
+            // Hide previous result
+            document.getElementById('resultSection').classList.remove('active');
+
+            // Show loading
+            showStatus(`Processing with ${provider} provider...`, 'loading');
+            document.getElementById('progressBar').classList.add('active');
+            document.getElementById('swapButton').disabled = true;
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('face_image', faceFile);
+            formData.append('video_file', videoFile);
+            formData.append('provider', provider);
+            formData.append('gender', gender);
+
+            const startTime = Date.now();
+
+            try {
+                const response = await fetch('/api/video/face-swap', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                if (response.ok) {
+                    const contentType = response.headers.get('Content-Type');
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        // JSON response with URL
+                        const data = await response.json();
+                        
+                        showStatus(`✅ Success! (${elapsed}s)`, 'success');
+                        document.getElementById('progressBar').classList.remove('active');
+                        
+                        // Show result
+                        displayVideoResult(data.video_url, data.provider, data.model, elapsed);
+                    } else {
+                        // Binary video response
+                        const blob = await response.blob();
+                        const videoUrl = URL.createObjectURL(blob);
+                        
+                        showStatus(`✅ Success! (${elapsed}s)`, 'success');
+                        document.getElementById('progressBar').classList.remove('active');
+                        
+                        // Show result
+                        displayVideoResult(videoUrl, provider, 'huggingface', elapsed, blob);
+                    }
+                } else {
+                    const error = await response.json();
+                    showStatus(`❌ Error: ${error.error || error.details}`, 'error');
+                    document.getElementById('progressBar').classList.remove('active');
+                }
+            } catch (error) {
+                showStatus(`❌ Network Error: ${error.message}`, 'error');
+                document.getElementById('progressBar').classList.remove('active');
+            } finally {
+                document.getElementById('swapButton').disabled = false;
+            }
+        }
+
+        function displayVideoResult(videoUrl, provider, model, elapsed, blob = null) {
+            const resultSection = document.getElementById('resultSection');
+            const resultInfo = document.getElementById('resultInfo');
+            const resultVideo = document.getElementById('resultVideo');
+            const downloadLink = document.getElementById('downloadLink');
+
+            // Show result section
+            resultSection.classList.add('active');
+
+            // Set video source
+            resultVideo.src = videoUrl;
+
+            // Update info badges
+            resultInfo.innerHTML = `
+                <div class="info-badge"><strong>Provider:</strong> ${provider}</div>
+                <div class="info-badge"><strong>Model:</strong> ${model}</div>
+                <div class="info-badge"><strong>Time:</strong> ${elapsed}s</div>
+            `;
+
+            // Setup download
+            if (blob) {
+                downloadLink.href = videoUrl;
+                downloadLink.style.display = 'inline-block';
+            } else {
+                downloadLink.href = videoUrl;
+                downloadLink.target = '_blank';
+                downloadLink.textContent = '🔗 Open Video';
+                downloadLink.style.display = 'inline-block';
+            }
+
+            // Scroll to result
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        // Load providers info on page load
+        fetch('/api/video/providers')
+            .then(res => res.json())
+            .then(data => {
+                console.log('Available providers:', data);
+            })
+            .catch(err => {
+                console.error('Failed to load providers:', err);
+            });
+    </script>
+</body>
+</html>

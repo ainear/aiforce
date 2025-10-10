@@ -74,6 +74,10 @@ def health_check():
 def home():
     return send_from_directory('static', 'index.html')
 
+@app.route('/video-swap')
+def video_swap_test():
+    return send_from_directory('static', 'video_swap.html')
+
 @app.route('/<path:path>')
 def serve_static(path):
     return send_from_directory('static', path)
