@@ -145,17 +145,6 @@ def get_providers():
     """Get available video face swap providers and models"""
     return jsonify({
         'providers': {
-            'huggingface': {
-                'name': 'HuggingFace',
-                'models': [
-                    'ALSv/video-face-swap',
-                    'MarkoVidrih/video-face-swap'
-                ],
-                'timeout': '60 seconds',
-                'auto_fallback': True,
-                'supports_gender_filter': False,
-                'status': '✅ WORKING 2025'
-            },
             'replicate': {
                 'name': 'Replicate Pro',
                 'models': [

@@ -20,20 +20,9 @@ class VideoFaceSwapProcessor:
         self.replicate_pro_token = os.getenv('REPLICATE_PRO_TOKEN', '')
         self.hf_timeout = 60  # 60 seconds timeout for HF models (video processing takes time)
         
-        # Hugging Face Pro models (order by priority)
-        # Using public Gradio Spaces with API access
-        self.hf_models = [
-            {
-                "name": "ALSv/video-face-swap",
-                "params": ["face_image", "video"],
-                "video_format": "simple"
-            },
-            {
-                "name": "MarkoVidrih/video-face-swap",
-                "params": ["face", "video"],
-                "video_format": "simple"
-            }
-        ]
+        # Hugging Face models - DISABLED (all models have compatibility issues)
+        # Using Replicate as primary provider
+        self.hf_models = []
         
         # Replicate Pro models (WORKING 2025) - WITH VERSION HASH
         self.replicate_models = [
@@ -145,32 +134,40 @@ class VideoFaceSwapProcessor:
         
         os.environ["REPLICATE_API_TOKEN"] = self.replicate_pro_token
         
-        # Save and validate face image - convert to JPEG for Replicate compatibility
+        # Save face image properly for Replicate
         from PIL import Image
         import io
         
-        # Read image data
+        # Read image data correctly
         if hasattr(face_image, 'stream'):
+            # Flask FileStorage object
+            face_image.stream.seek(0)  # Reset to beginning
             face_data = face_image.stream.read()
-            face_image.stream.seek(0)  # Reset stream
+        elif hasattr(face_image, 'read'):
+            # File-like object
+            face_data = face_image.read()
         else:
-            face_data = face_image.read() if hasattr(face_image, 'read') else face_image
+            # Raw bytes
+            face_data = face_image
         
-        # Open with PIL and convert to RGB JPEG
+        # Convert to RGB JPEG using PIL
         try:
+            # Open image from bytes
             img = Image.open(io.BytesIO(face_data))
-            # Convert to RGB (handles RGBA, grayscale, etc.)
+            
+            # Convert to RGB (handles PNG, WEBP, RGBA, etc.)
             if img.mode != 'RGB':
                 img = img.convert('RGB')
             
-            # Save as JPEG
+            # Save as JPEG to temp file
             face_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
             img.save(face_temp.name, 'JPEG', quality=95)
             face_path = face_temp.name
             face_temp.close()
+            print(f"[Replicate] Image converted to JPEG: {face_path}")
         except Exception as e:
-            print(f"[Replicate] Image conversion error: {e}")
-            # Fallback to original
+            print(f"[Replicate] Image conversion failed: {e}, using raw data")
+            # Fallback: save raw data
             face_path = self._save_temp_file(face_data, '.jpg')
         
         # Save video
@@ -242,9 +239,10 @@ class VideoFaceSwapProcessor:
         print(f"[VideoSwap] Starting with provider: {provider}")
         
         if provider == "huggingface":
-            # HuggingFace only
-            result, model = self.swap_face_huggingface(face_image, video_file, gender)
-            return result, "huggingface", model
+            # HuggingFace disabled - use Replicate instead
+            print("[VideoSwap] HuggingFace disabled, using Replicate instead")
+            result, model = self.swap_face_replicate(face_image, video_file)
+            return result, "replicate", model
         
         elif provider == "replicate":
             # Replicate with HuggingFace fallback (smart retry)
@@ -265,15 +263,7 @@ class VideoFaceSwapProcessor:
                 raise rep_error
         
         else:  # "auto"
-            # Try HuggingFace first, fallback to Replicate
-            try:
-                result, model = self.swap_face_huggingface(face_image, video_file, gender)
-                return result, "huggingface", model
-            except Exception as hf_error:
-                print(f"[VideoSwap] HF failed: {hf_error}, trying Replicate...")
-                
-                try:
-                    result, model = self.swap_face_replicate(face_image, video_file)
-                    return result, "replicate", model
-                except Exception as rep_error:
-                    raise Exception(f"Both providers failed. HF: {hf_error}, Replicate: {rep_error}")
+            # Auto mode - use Replicate (HuggingFace disabled due to compatibility issues)
+            print("[VideoSwap] Auto mode - using Replicate")
+            result, model = self.swap_face_replicate(face_image, video_file)
+            return result, "replicate", model
