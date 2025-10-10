@@ -33,6 +33,14 @@ class VideoFaceSwapProcessor:
         
         # VModel.AI credentials
         self.vmodel_token = os.getenv('VMODEL_API_TOKEN', '')
+        
+        # HuggingFace Spaces for video face swap (FREE alternatives)
+        self.hf_spaces = {
+            'hf-tonyassi': 'tonyassi/video-face-swap',
+            'hf-marko': 'MarkoVidrih/video-face-swap',
+            'hf-alsv': 'ALSv/video-face-swap',
+            'hf-prithiv': 'prithivMLmods/Video-Face-Swapper',
+        }
     
     def _save_temp_file(self, file_data, suffix='.jpg'):
         """Save uploaded file to temp location"""
@@ -384,22 +392,130 @@ class VideoFaceSwapProcessor:
             print(f"[VModel] Error: {e}")
             raise
     
-    def swap_face_video(self, face_image, video_file, provider="auto", gender="all"):
+    def swap_face_huggingface(self, face_image, video_file, space_name, gender="all"):
         """
-        Main video face swap method with 3 providers
+        Swap face using HuggingFace Spaces (Gradio API)
+        FREE alternative providers
         
         Args:
             face_image: Face image file
             video_file: Video file
-            provider: "auto" (Replicate→VModel), "replicate", or "vmodel"
-            gender: "all", "male", "female" (deprecated, kept for compatibility)
+            space_name: HuggingFace space name (e.g., "tonyassi/video-face-swap")
+            gender: "all", "male", "female" (some spaces support this)
+        
+        Returns:
+            (video_url, space_name)
+        """
+        print(f"[HF Space] Using {space_name}")
+        
+        try:
+            from gradio_client import Client, handle_file
+            
+            # Save files to temp paths
+            face_path = self._save_temp_file(face_image, suffix='.jpg')
+            video_path = self._save_temp_file(video_file, suffix='.mp4')
+            
+            try:
+                # Create Gradio client
+                client = Client(space_name)
+                print(f"[HF Space] Connected to {space_name}")
+                
+                # Different spaces have different APIs
+                # Try common patterns
+                try:
+                    # Pattern 1: tonyassi/video-face-swap (image, video, gender)
+                    if 'tonyassi' in space_name:
+                        print(f"[HF Space] Calling with gender parameter: {gender}")
+                        result = client.predict(
+                            source_image=handle_file(face_path),
+                            target_video=handle_file(video_path),
+                            gender=gender,
+                            api_name="/predict"
+                        )
+                    else:
+                        # Pattern 2: Most other spaces (image, video only)
+                        print(f"[HF Space] Calling without gender parameter")
+                        result = client.predict(
+                            handle_file(face_path),
+                            handle_file(video_path),
+                            api_name="/predict"
+                        )
+                    
+                    print(f"[HF Space] Result type: {type(result)}")
+                    print(f"[HF Space] Result: {result}")
+                    
+                    # Result can be a string (URL or file path) or tuple
+                    if isinstance(result, tuple):
+                        video_result = result[0]
+                    else:
+                        video_result = result
+                    
+                    # Check if it's a URL or file path
+                    if isinstance(video_result, str):
+                        if video_result.startswith('http'):
+                            # It's a URL
+                            return video_result, space_name
+                        else:
+                            # It's a file path, need to read and potentially upload
+                            # For now, return the path (caller can handle upload)
+                            return video_result, space_name
+                    else:
+                        raise Exception(f"Unexpected result type: {type(video_result)}")
+                
+                except Exception as api_error:
+                    print(f"[HF Space] API error: {api_error}")
+                    # Try without api_name parameter
+                    print(f"[HF Space] Retrying without api_name...")
+                    result = client.predict(
+                        handle_file(face_path),
+                        handle_file(video_path)
+                    )
+                    
+                    if isinstance(result, tuple):
+                        video_result = result[0]
+                    else:
+                        video_result = result
+                    
+                    if isinstance(video_result, str):
+                        return video_result, space_name
+                    else:
+                        raise Exception(f"Unexpected result type: {type(video_result)}")
+            
+            finally:
+                # Cleanup temp files
+                try:
+                    os.unlink(face_path)
+                    os.unlink(video_path)
+                except:
+                    pass
+        
+        except Exception as e:
+            print(f"[HF Space] Error: {e}")
+            raise Exception(f"HuggingFace Space {space_name} failed: {e}")
+    
+    def swap_face_video(self, face_image, video_file, provider="auto", gender="all"):
+        """
+        Main video face swap method with multiple providers
+        
+        Args:
+            face_image: Face image file
+            video_file: Video file
+            provider: "auto", "replicate", "vmodel", "hf-tonyassi", "hf-marko", "hf-alsv", "hf-prithiv"
+            gender: "all", "male", "female" (supported by some providers)
         
         Returns:
             (video_url, provider_used, model_used)
         """
         print(f"[VideoSwap] Starting with provider: {provider}")
         
-        if provider == "replicate":
+        # Check if it's a HuggingFace Space provider
+        if provider in self.hf_spaces:
+            space_name = self.hf_spaces[provider]
+            print(f"[VideoSwap] Using HuggingFace Space: {provider} ({space_name})")
+            result, model = self.swap_face_huggingface(face_image, video_file, space_name, gender)
+            return result, provider, model
+        
+        elif provider == "replicate":
             # Replicate only - arabyai-replicate/roop_face_swap with audio
             print("[VideoSwap] Using Replicate (arabyai-replicate/roop_face_swap)")
             result, model = self.swap_face_replicate(face_image, video_file)
@@ -412,26 +528,43 @@ class VideoFaceSwapProcessor:
             return result, "vmodel", model
         
         else:  # "auto" or any other value
-            # Auto mode: Replicate primary → VModel fallback
-            print("[VideoSwap] Auto mode - Replicate primary, VModel fallback")
+            # Auto mode: Replicate primary → VModel fallback → HF fallback
+            print("[VideoSwap] Auto mode - Replicate → VModel → HF fallback chain")
             
+            errors = []
+            
+            # Try 1: Replicate first (stable, audio preserved, $0.14)
             try:
-                # Try Replicate first (stable, audio preserved)
                 result, model = self.swap_face_replicate(face_image, video_file)
                 return result, "replicate", model
-            
             except Exception as replicate_error:
                 print(f"[VideoSwap] Replicate failed: {replicate_error}")
-                
-                # Fallback to VModel if available
-                if self.vmodel_token:
+                errors.append(f"Replicate: {replicate_error}")
+            
+            # Try 2: VModel fallback (premium, faster, $0.10)
+            if self.vmodel_token:
+                try:
                     print("[VideoSwap] Falling back to VModel...")
-                    try:
-                        result, model = self.swap_face_vmodel(face_image, video_file)
-                        return result, "vmodel (fallback)", model
-                    except Exception as vmodel_error:
-                        print(f"[VideoSwap] VModel fallback failed: {vmodel_error}")
-                        raise Exception(f"Both providers failed. Replicate: {replicate_error}, VModel: {vmodel_error}")
-                else:
-                    print("[VideoSwap] VModel not configured, cannot fallback")
-                    raise replicate_error
+                    result, model = self.swap_face_vmodel(face_image, video_file)
+                    return result, "vmodel (fallback)", model
+                except Exception as vmodel_error:
+                    print(f"[VideoSwap] VModel fallback failed: {vmodel_error}")
+                    errors.append(f"VModel: {vmodel_error}")
+            else:
+                print("[VideoSwap] VModel not configured, skipping")
+                errors.append("VModel: Not configured")
+            
+            # Try 3: HuggingFace Spaces fallback (FREE, slower)
+            print("[VideoSwap] Trying HuggingFace Spaces as last resort...")
+            for hf_provider, space_name in self.hf_spaces.items():
+                try:
+                    print(f"[VideoSwap] Trying {hf_provider} ({space_name})...")
+                    result, model = self.swap_face_huggingface(face_image, video_file, space_name, gender)
+                    return result, f"{hf_provider} (fallback)", model
+                except Exception as hf_error:
+                    print(f"[VideoSwap] {hf_provider} failed: {hf_error}")
+                    errors.append(f"{hf_provider}: {hf_error}")
+            
+            # All providers failed
+            error_summary = "\n".join(errors)
+            raise Exception(f"All providers failed:\n{error_summary}")
