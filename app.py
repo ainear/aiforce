@@ -8,6 +8,7 @@ from PIL import Image
 import tempfile
 from dotenv import load_dotenv
 from routes.advanced_features import advanced_bp
+from routes.video_routes import video_bp
 from utils.replicate_processor import ReplicateProcessor
 from utils.supabase_storage import SupabaseStorage
 
@@ -27,6 +28,7 @@ CORS(app,
      }})
 
 app.register_blueprint(advanced_bp, url_prefix='/api/advanced')
+app.register_blueprint(video_bp, url_prefix='/api/video')
 
 HF_API_TOKEN = os.getenv('HUGGINGFACE_API_TOKEN', '')
 HF_API_URL = "https://api-inference.huggingface.co/models/"
@@ -98,6 +100,10 @@ def api_info():
                 '/api/advanced/remove-background - Remove image background ✅',
                 '/api/advanced/depth-map - Generate depth map ✅',
                 '/api/advanced/colorize - Colorize B&W images ⚠️'
+            ],
+            'video': [
+                '/api/video/face-swap - Video face swap ✅ (HF Pro + Replicate Pro)',
+                '/api/video/providers - List available providers & models'
             ],
             'health': '/api/health'
         },
