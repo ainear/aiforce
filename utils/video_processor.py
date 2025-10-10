@@ -202,10 +202,16 @@ class VideoFaceSwapProcessor:
                     if isinstance(output, str):
                         video_url = output
                     elif isinstance(output, list) and len(output) > 0:
-                        video_url = output[0] if isinstance(output[0], str) else str(output[0])
+                        first_item = output[0]
+                        if isinstance(first_item, str):
+                            video_url = first_item
+                        elif hasattr(first_item, 'url'):
+                            video_url = first_item.url  # type: ignore
+                        else:
+                            video_url = str(first_item)
                     elif hasattr(output, 'url'):
                         # FileOutput object
-                        video_url = output.url
+                        video_url = output.url  # type: ignore
                     elif hasattr(output, '__str__'):
                         # Try converting to string
                         video_url = str(output)
@@ -248,9 +254,22 @@ class VideoFaceSwapProcessor:
             return result, "huggingface", model
         
         elif provider == "replicate":
-            # Replicate only
-            result, model = self.swap_face_replicate(face_image, video_file)
-            return result, "replicate", model
+            # Replicate with HuggingFace fallback (smart retry)
+            try:
+                result, model = self.swap_face_replicate(face_image, video_file)
+                return result, "replicate", model
+            except Exception as rep_error:
+                print(f"[VideoSwap] Replicate failed: {rep_error}")
+                # Smart fallback to HuggingFace
+                if "ffmpeg" in str(rep_error).lower() or "timeout" in str(rep_error).lower():
+                    print("[VideoSwap] Trying HuggingFace as fallback...")
+                    try:
+                        result, model = self.swap_face_huggingface(face_image, video_file, gender)
+                        return result, "huggingface (fallback)", model
+                    except:
+                        pass
+                # Re-raise original error
+                raise rep_error
         
         else:  # "auto"
             # Try HuggingFace first, fallback to Replicate

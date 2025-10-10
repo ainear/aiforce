@@ -546,7 +546,14 @@
                     }
                 } else {
                     const error = await response.json();
-                    showStatus(`❌ Error: ${error.error || error.details}`, 'error');
+                    let errorMsg = `❌ ${error.error || 'Error'}`;
+                    if (error.suggestion) {
+                        errorMsg += `\n💡 ${error.suggestion}`;
+                    }
+                    if (error.details) {
+                        errorMsg += `\n📝 ${error.details}`;
+                    }
+                    showStatus(errorMsg, 'error');
                     document.getElementById('progressBar').classList.remove('active');
                 }
             } catch (error) {
@@ -603,7 +610,8 @@
 
         function showStatus(message, type) {
             const status = document.getElementById('status');
-            status.textContent = message;
+            // Support multiline messages
+            status.innerHTML = message.replace(/\n/g, '<br>');
             status.className = `status ${type}`;
         }
 

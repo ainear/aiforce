@@ -94,7 +94,7 @@ def video_face_swap():
         error_msg = str(e)
         print(f"[API] Video face swap error: {error_msg}")
         
-        # Check for specific errors
+        # Check for specific errors and provide helpful messages
         if "HUGGINGFACE_PRO_TOKEN" in error_msg:
             return jsonify({
                 'error': 'HuggingFace Pro token required',
@@ -109,9 +109,35 @@ def video_face_swap():
                 'setup_url': 'https://replicate.com/account/api-tokens'
             }), 503
         
+        # FFmpeg or video format errors
+        if "ffmpeg" in error_msg.lower():
+            return jsonify({
+                'error': 'Video format not supported',
+                'details': 'Try converting your video to MP4 (H.264) or use a different video',
+                'suggestion': 'Switch to HuggingFace provider or use Auto mode for fallback'
+            }), 400
+        
+        # Timeout errors
+        if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+            return jsonify({
+                'error': 'Processing timeout',
+                'details': 'Video processing took too long',
+                'suggestion': 'Try a shorter video or use HuggingFace provider'
+            }), 408
+        
+        # All providers failed
+        if "both providers failed" in error_msg.lower() or "all" in error_msg.lower():
+            return jsonify({
+                'error': 'All AI providers failed',
+                'details': error_msg,
+                'suggestion': 'Please try again with a different video or check API tokens'
+            }), 503
+        
+        # Generic error
         return jsonify({
             'error': 'Video face swap failed',
-            'details': error_msg
+            'details': error_msg,
+            'suggestion': 'Try using Auto or HuggingFace provider'
         }), 500
 
 @video_bp.route('/providers', methods=['GET'])
