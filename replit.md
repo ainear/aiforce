@@ -40,13 +40,14 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 - **Template Face Swap**:
     - `/api/templates/list`: Lists available face swap templates.
     - `/api/templates/face-swap`: Swaps user faces with templates.
-- **Video Face Swap** (✅ AUDIO PRESERVED):
+- **Video Face Swap** (✅ AUDIO PRESERVED - BOTH WORKING):
     - `/api/video/face-swap`: Video face swapping with 3 provider options:
-      - `auto`: Replicate primary → VModel fallback (RECOMMENDED)
-      - `replicate`: arabyai-replicate/roop_face_swap ($0.14, ~77s, stable)
-      - `vmodel`: VModel.AI premium ($0.10, 15-30s, faster)
+      - `auto`: Replicate primary → VModel fallback (RECOMMENDED) ⭐
+      - `replicate`: arabyai-replicate/roop_face_swap ($0.14, ~77s, stable) ✅
+      - `vmodel`: VModel.AI premium ($0.10, 15-51s, faster) ✅
     - `/api/video/providers`: Lists available video face swap providers and models.
     - **All providers preserve original video audio!**
+    - **Status**: Both Replicate & VModel confirmed working (Oct 2025)
 - **Storage Integration**:
     - `/api/ai/process-and-save`: Processes images and optionally saves to Supabase Storage, returning a public URL.
 
