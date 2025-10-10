@@ -50,12 +50,13 @@ def video_face_swap():
             return jsonify({'error': f'Invalid video format. Allowed: {ALLOWED_VIDEO_EXTENSIONS}'}), 400
         
         # Get parameters
-        provider = request.form.get('provider', 'auto')  # auto, huggingface, replicate
+        provider = request.form.get('provider', 'auto')  # auto, replicate, vmodel, hf-*
         gender = request.form.get('gender', 'all')       # all, male, female
         
         # Validate provider
-        if provider not in ['auto', 'replicate', 'vmodel']:
-            return jsonify({'error': f'Invalid provider: {provider}. Use: auto, replicate, or vmodel'}), 400
+        allowed_providers = ['auto', 'replicate', 'vmodel', 'hf-tonyassi', 'hf-marko', 'hf-alsv', 'hf-prithiv']
+        if provider not in allowed_providers:
+            return jsonify({'error': f'Invalid provider: {provider}. Allowed: {", ".join(allowed_providers)}'}), 400
         
         # Validate gender
         if gender not in ['all', 'male', 'female']:
@@ -153,19 +154,17 @@ def get_providers():
     return jsonify({
         'providers': {
             'auto': {
-                'name': 'Auto (Replicate → VModel)',
-                'strategy': 'Replicate primary → VModel fallback',
-                'models': ['arabyai-replicate/roop_face_swap', 'vmodel/video-face-swap-pro'],
-                'timeout': '15-77 seconds',
+                'name': 'Auto (Best)',
+                'strategy': 'Replicate → VModel → HuggingFace fallback chain',
+                'models': ['arabyai-replicate/roop_face_swap', 'vmodel/video-face-swap-pro', '4 HF Spaces'],
+                'timeout': '15-77 seconds (+ HF fallback if needed)',
                 'audio_preserved': True,
-                'cost': '$0.10-0.14 per video',
-                'status': '✅ RECOMMENDED'
+                'cost': '$0.10-0.14 per video (FREE HF fallback)',
+                'status': '✅ RECOMMENDED - 6 PROVIDERS!'
             },
             'replicate': {
                 'name': 'Replicate (Stable)',
-                'models': [
-                    'arabyai-replicate/roop_face_swap'
-                ],
+                'models': ['arabyai-replicate/roop_face_swap'],
                 'timeout': '~77 seconds',
                 'audio_preserved': True,
                 'cost': '$0.14 per video',
@@ -174,15 +173,50 @@ def get_providers():
             },
             'vmodel': {
                 'name': 'VModel.AI (Premium)',
-                'models': [
-                    'vmodel/video-face-swap-pro'
-                ],
+                'models': ['vmodel/video-face-swap-pro'],
                 'timeout': '15-30 seconds',
                 'audio_preserved': True,
                 'cost': '$0.03/second (~$0.10 per short video)',
                 'quality': 'Premium, commercial license',
                 'status': '✅ WORKING 2025',
                 'requirements': 'Requires Supabase (auto-uploads files)'
+            },
+            'hf-tonyassi': {
+                'name': 'HuggingFace (tonyassi)',
+                'space': 'tonyassi/video-face-swap',
+                'timeout': 'Variable (queue-based)',
+                'audio_preserved': 'Unknown',
+                'cost': 'FREE',
+                'quality': 'Preview mode (800px, 4s, 12fps)',
+                'status': '🤗 FREE BACKUP',
+                'features': 'Gender filtering support'
+            },
+            'hf-marko': {
+                'name': 'HuggingFace (MarkoVidrih)',
+                'space': 'MarkoVidrih/video-face-swap',
+                'timeout': 'Variable (queue-based)',
+                'audio_preserved': 'Unknown',
+                'cost': 'FREE',
+                'quality': 'Basic quality',
+                'status': '🤗 FREE BACKUP'
+            },
+            'hf-alsv': {
+                'name': 'HuggingFace (ALSv)',
+                'space': 'ALSv/video-face-swap',
+                'timeout': 'Variable (queue-based)',
+                'audio_preserved': 'Unknown',
+                'cost': 'FREE',
+                'quality': 'Basic quality',
+                'status': '🤗 FREE BACKUP'
+            },
+            'hf-prithiv': {
+                'name': 'HuggingFace (prithivMLmods)',
+                'space': 'prithivMLmods/Video-Face-Swapper',
+                'timeout': 'Variable (queue-based)',
+                'audio_preserved': 'Unknown',
+                'cost': 'FREE',
+                'quality': 'Educational model',
+                'status': '🤗 FREE BACKUP'
             }
         },
         'supported_formats': {
@@ -190,10 +224,11 @@ def get_providers():
             'image': list(ALLOWED_IMAGE_EXTENSIONS)
         },
         'usage': {
-            'provider_auto': 'Replicate primary ($0.14, stable) → VModel fallback ($0.10, premium)',
+            'provider_auto': 'Replicate → VModel → 4 HuggingFace Spaces (6 total providers!)',
             'provider_replicate': 'Replicate only - arabyai-replicate/roop_face_swap with audio',
             'provider_vmodel': 'VModel.AI - premium quality, faster, requires Supabase',
-            'audio_note': '✅ Both providers preserve original video audio!',
-            'important': 'Audio is preserved by default in all providers'
+            'provider_hf': '4 FREE HuggingFace Spaces (tonyassi, marko, alsv, prithiv)',
+            'audio_note': '✅ Replicate & VModel preserve original video audio!',
+            'important': 'Auto mode tries 6 providers for maximum reliability!'
         }
     })

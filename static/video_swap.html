@@ -348,12 +348,16 @@
                 <div class="option-group">
                     <label for="providerSelect">Provider</label>
                     <select id="providerSelect" onchange="updateProviderInfo()">
-                        <option value="auto">Auto (Replicate → VModel)</option>
-                        <option value="replicate">Replicate (Fast & Cheap)</option>
-                        <option value="vmodel">VModel.AI (Premium)</option>
+                        <option value="auto">Auto (6 Providers!) ⭐</option>
+                        <option value="replicate">Replicate ($0.14)</option>
+                        <option value="vmodel">VModel.AI ($0.10)</option>
+                        <option value="hf-tonyassi">🤗 HF tonyassi (FREE)</option>
+                        <option value="hf-marko">🤗 HF MarkoVidrih (FREE)</option>
+                        <option value="hf-alsv">🤗 HF ALSv (FREE)</option>
+                        <option value="hf-prithiv">🤗 HF prithivMLmods (FREE)</option>
                     </select>
                     <div class="provider-info" id="providerInfo">
-                        ✅ Replicate (fast, cheap, audio) → VModel fallback (premium)
+                        ✅ Auto tries 6 providers: Replicate → VModel → 4 HF Spaces (FREE backups!)
                     </div>
                 </div>
 
@@ -447,12 +451,16 @@
             const infoDiv = document.getElementById('providerInfo');
             
             const infos = {
-                'auto': '✅ Replicate (fast, cheap, audio) → VModel fallback (premium)',
-                'replicate': '⚡ Fast & cheap ($0.0026/video) - Audio preserved ✅',
-                'vmodel': '💎 Premium quality - Commercial license - Audio preserved ✅'
+                'auto': '✅ Auto tries 6 providers: Replicate → VModel → 4 HF Spaces (FREE backups!)',
+                'replicate': '⚡ Replicate - $0.14/video, ~77s, Audio preserved ✅',
+                'vmodel': '💎 VModel.AI - $0.10/video, 15-30s, Premium quality, Audio preserved ✅',
+                'hf-tonyassi': '🤗 FREE HuggingFace Space - tonyassi/video-face-swap (Gender filtering)',
+                'hf-marko': '🤗 FREE HuggingFace Space - MarkoVidrih/video-face-swap',
+                'hf-alsv': '🤗 FREE HuggingFace Space - ALSv/video-face-swap',
+                'hf-prithiv': '🤗 FREE HuggingFace Space - prithivMLmods/Video-Face-Swapper'
             };
             
-            infoDiv.textContent = infos[provider];
+            infoDiv.textContent = infos[provider] || 'Select a provider';
         }
 
         let countdownInterval = null;
@@ -471,9 +479,13 @@
 
             // Get estimated time based on provider
             const estimatedTimes = {
-                'auto': { time: 30, msg: '~10-30 seconds (Replicate → VModel fallback)' },
-                'replicate': { time: 15, msg: '~10-15 seconds (Fast GPU processing)' },
-                'vmodel': { time: 30, msg: '~15-30 seconds (Premium quality)' }
+                'auto': { time: 60, msg: '~15-77s (Replicate → VModel → HF fallback chain)' },
+                'replicate': { time: 77, msg: '~77 seconds (Stable GPU processing)' },
+                'vmodel': { time: 30, msg: '~15-30 seconds (Premium quality)' },
+                'hf-tonyassi': { time: 120, msg: '~60-120s (FREE HF Space - Queue-based)' },
+                'hf-marko': { time: 120, msg: '~60-120s (FREE HF Space - Queue-based)' },
+                'hf-alsv': { time: 120, msg: '~60-120s (FREE HF Space - Queue-based)' },
+                'hf-prithiv': { time: 120, msg: '~60-120s (FREE HF Space - Queue-based)' }
             };
             const estimate = estimatedTimes[provider] || estimatedTimes['auto'];
 

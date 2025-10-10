@@ -94,8 +94,9 @@ def swap_face_with_template():
         
         # Get provider
         provider = request.form.get('provider', 'auto')
-        if provider not in ['auto', 'replicate', 'vmodel']:
-            return jsonify({'error': f'Invalid provider: {provider}'}), 400
+        allowed_providers = ['auto', 'replicate', 'vmodel', 'hf-tonyassi', 'hf-marko', 'hf-alsv', 'hf-prithiv']
+        if provider not in allowed_providers:
+            return jsonify({'error': f'Invalid provider: {provider}. Allowed: {", ".join(allowed_providers)}'}), 400
         
         print(f"[TemplateAPI] Face swap request: template={template_id}, provider={provider}")
         
