@@ -25,9 +25,9 @@ class VideoFaceSwapProcessor:
         self.hf_models = []
         
         # Replicate Pro models (WORKING 2025) - AUDIO PRESERVED
-        # arabyai-replicate/roop_face_swap: $0.11/run, ~77s, VIDEO face swap, AUDIO PRESERVED ✅
+        # yan-ops/face_swap: Popular, stable, 105M+ runs, VIDEO face swap ✅
         self.replicate_models = [
-            "arabyai-replicate/roop_face_swap",
+            "yan-ops/face_swap",
         ]
         
         # VModel.AI credentials
@@ -227,19 +227,45 @@ class VideoFaceSwapProcessor:
         
         raise Exception("All Replicate models failed")
     
+    def _upload_to_supabase(self, file_data, filename):
+        """Upload file to Supabase and return public URL"""
+        from supabase import create_client
+        
+        supabase_url = os.getenv('SUPABASE_URL')
+        supabase_key = os.getenv('SUPABASE_KEY')
+        
+        if not supabase_url or not supabase_key:
+            raise Exception("SUPABASE_URL and SUPABASE_KEY required for VModel (needs public URLs)")
+        
+        supabase = create_client(supabase_url, supabase_key)
+        
+        # Upload to ai-photos bucket
+        file_path = f"vmodel-temp/{filename}"
+        supabase.storage.from_('ai-photos').upload(
+            file_path,
+            file_data,
+            {"content-type": "video/mp4" if filename.endswith('.mp4') else "image/jpeg"}
+        )
+        
+        # Get public URL
+        public_url = supabase.storage.from_('ai-photos').get_public_url(file_path)
+        print(f"[VModel] Uploaded to Supabase: {public_url}")
+        return public_url
+    
     def swap_face_vmodel(self, face_image, video_file):
         """
         VModel.AI video face swap with audio preservation
         - Premium quality, ~15s processing
         - Audio preserved by default
+        - Requires Supabase for temporary file hosting (VModel needs URLs)
         """
         if not self.vmodel_token:
             raise Exception("VMODEL_API_TOKEN required for VModel video face swap")
         
         print("[VModel] Starting video face swap...")
         
-        # Prepare files
         import requests
+        import uuid
         
         # Read face image
         if hasattr(face_image, 'stream'):
@@ -259,37 +285,29 @@ class VideoFaceSwapProcessor:
         else:
             video_data = video_file
         
-        # Upload files to temporary storage (you'll need to implement this)
-        # For now, using local temp files
-        face_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
-        face_temp.write(face_data)
-        face_temp.close()
-        
-        video_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
-        video_temp.write(video_data)
-        video_temp.close()
-        
+        # Upload files to Supabase to get public URLs
+        unique_id = str(uuid.uuid4())[:8]
         try:
-            # VModel API call with multipart/form-data
-            with open(face_temp.name, 'rb') as face_file, open(video_temp.name, 'rb') as video_file:
-                files = {
-                    'target': face_file,
-                    'source': video_file
-                }
-                data = {
-                    'version': '537e83f7ed84751dc56aa80fb2391b07696c85a49967c72c64f002a0ca2bb224',
-                    'disable_safety_checker': 'true'
-                }
-                
-                response = requests.post(
-                    "https://api.vmodel.ai/api/tasks/v1/create",
-                    headers={
-                        "Authorization": f"Bearer {self.vmodel_token}"
-                    },
-                    files=files,
-                    data=data,
-                    timeout=180  # 3 minutes timeout
-                )
+            face_url = self._upload_to_supabase(face_data, f"face_{unique_id}.jpg")
+            video_url = self._upload_to_supabase(video_data, f"video_{unique_id}.mp4")
+            
+            # VModel API call with URLs (JSON format)
+            response = requests.post(
+                "https://api.vmodel.ai/api/tasks/v1/create",
+                headers={
+                    "Authorization": f"Bearer {self.vmodel_token}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "version": "537e83f7ed84751dc56aa80fb2391b07696c85a49967c72c64f002a0ca2bb224",
+                    "input": {
+                        "target": face_url,  # URL to face image
+                        "source": video_url,  # URL to video
+                        "disable_safety_checker": True
+                    }
+                },
+                timeout=180
+            )
             
             response.raise_for_status()
             result = response.json()
@@ -299,7 +317,9 @@ class VideoFaceSwapProcessor:
             if not task_id:
                 raise Exception(f"VModel API error: {result}")
             
-            # Poll for completion (implement polling logic)
+            print(f"[VModel] Task created: {task_id}, polling for result...")
+            
+            # Poll for completion
             import time
             max_retries = 60  # 60 * 3s = 3 minutes max
             for i in range(max_retries):
@@ -326,13 +346,9 @@ class VideoFaceSwapProcessor:
             
             raise Exception("VModel processing timeout (3 minutes)")
             
-        finally:
-            # Cleanup temp files
-            try:
-                os.unlink(face_temp.name)
-                os.unlink(video_temp.name)
-            except:
-                pass
+        except Exception as e:
+            print(f"[VModel] Error: {e}")
+            raise
     
     def swap_face_video(self, face_image, video_file, provider="auto", gender="all"):
         """
