@@ -457,6 +457,8 @@
             infoDiv.textContent = infos[provider];
         }
 
+        let countdownInterval = null;
+
         async function swapFace() {
             if (!faceFile || !videoFile) {
                 showStatus('Please select both face image and video', 'error');
@@ -469,10 +471,32 @@
             // Hide previous result
             document.getElementById('resultSection').classList.remove('active');
 
-            // Show loading
-            showStatus(`Processing with ${provider} provider...`, 'loading');
+            // Get estimated time based on provider
+            const estimatedTimes = {
+                'auto': { time: 90, msg: '~1-2 minutes (HuggingFace → Replicate fallback)' },
+                'huggingface': { time: 30, msg: '~30 seconds (Fast CPU processing)' },
+                'replicate': { time: 90, msg: '~1-2 minutes (High quality GPU)' }
+            };
+            const estimate = estimatedTimes[provider] || estimatedTimes['auto'];
+
+            // Show loading with initial message
+            showStatus(`🔄 ${estimate.msg}`, 'loading');
             document.getElementById('progressBar').classList.add('active');
             document.getElementById('swapButton').disabled = true;
+
+            // Start countdown timer
+            let remainingTime = estimate.time;
+            countdownInterval = setInterval(() => {
+                remainingTime--;
+                if (remainingTime > 0) {
+                    const mins = Math.floor(remainingTime / 60);
+                    const secs = remainingTime % 60;
+                    const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+                    showStatus(`🔄 Processing... Estimated time: ${timeStr} remaining`, 'loading');
+                } else {
+                    showStatus('🔄 Almost done... Please wait...', 'loading');
+                }
+            }, 1000);
 
             // Prepare form data
             const formData = new FormData();
@@ -490,6 +514,12 @@
                 });
 
                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                // Clear countdown timer
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
 
                 if (response.ok) {
                     const contentType = response.headers.get('Content-Type');
@@ -520,9 +550,19 @@
                     document.getElementById('progressBar').classList.remove('active');
                 }
             } catch (error) {
+                // Clear countdown timer
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
                 showStatus(`❌ Network Error: ${error.message}`, 'error');
                 document.getElementById('progressBar').classList.remove('active');
             } finally {
+                // Ensure countdown is cleared
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
                 document.getElementById('swapButton').disabled = false;
             }
         }

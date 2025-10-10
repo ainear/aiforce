@@ -198,11 +198,17 @@ class VideoFaceSwapProcessor:
                         }
                     )
                     
-                    # Download result
+                    # Handle different output formats
                     if isinstance(output, str):
                         video_url = output
                     elif isinstance(output, list) and len(output) > 0:
-                        video_url = output[0]
+                        video_url = output[0] if isinstance(output[0], str) else str(output[0])
+                    elif hasattr(output, 'url'):
+                        # FileOutput object
+                        video_url = output.url
+                    elif hasattr(output, '__str__'):
+                        # Try converting to string
+                        video_url = str(output)
                     else:
                         raise Exception(f"Unexpected output format: {type(output)}")
                     
