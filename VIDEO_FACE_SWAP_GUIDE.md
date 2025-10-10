@@ -37,7 +37,8 @@ curl http://localhost:5000/api/video/providers
       "name": "HuggingFace Pro",
       "models": [
         "tonyassi/video-face-swap",
-        "yoshibomball123/Video-Face-Swap"
+        "ALSv/video-face-swap",
+        "MarkoVidrih/video-face-swap"
       ],
       "timeout": "5-7 seconds per model",
       "auto_fallback": true,
@@ -46,11 +47,11 @@ curl http://localhost:5000/api/video/providers
     "replicate": {
       "name": "Replicate Pro",
       "models": [
-        "yan-ops/face_swap",
-        "cdingram/face-swap"
+        "arabyai-replicate/roop_face_swap"
       ],
-      "features": ["video", "image"],
-      "pricing": "~$0.014 per run"
+      "features": ["video"],
+      "pricing": "~$0.11 per run",
+      "status": "✅ WORKING 2025"
     }
   },
   "supported_formats": {

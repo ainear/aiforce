@@ -22,14 +22,14 @@ class VideoFaceSwapProcessor:
         
         # Hugging Face Pro models (order by priority)
         self.hf_models = [
-            "tonyassi/video-face-swap",           # Model 1: Popular, stable
-            "yoshibomball123/Video-Face-Swap",    # Model 2: CNN+GAN architecture
+            "tonyassi/video-face-swap",      # Model 1: Popular
+            "ALSv/video-face-swap",          # Model 2: Alternative
+            "MarkoVidrih/video-face-swap",   # Model 3: Backup
         ]
         
-        # Replicate Pro models
+        # Replicate Pro models (WORKING 2025)
         self.replicate_models = [
-            "yan-ops/face_swap",      # 105M+ runs, most reliable
-            "cdingram/face-swap",     # $0.014/run, A100 GPU
+            "arabyai-replicate/roop_face_swap",  # WORKING! Video face swap
         ]
     
     def _save_temp_file(self, file_data, suffix='.jpg'):
@@ -53,13 +53,33 @@ class VideoFaceSwapProcessor:
                 hf_token=self.hf_pro_token if self.hf_pro_token else None
             )
             
-            # Run prediction with timeout check
-            result = client.predict(
-                reference_image=face_image_path,
-                video_file=video_path,
-                gender_selection=gender,
-                api_name="/predict"
-            )
+            # Try different API call methods
+            try:
+                # Method 1: With named parameters
+                result = client.predict(
+                    face_image_path,
+                    video_path,
+                    gender,
+                    api_name="/predict"
+                )
+            except Exception as e1:
+                print(f"[HF] Method 1 failed: {e1}, trying method 2...")
+                try:
+                    # Method 2: Without api_name
+                    result = client.predict(
+                        face_image_path,
+                        video_path,
+                        gender
+                    )
+                except Exception as e2:
+                    print(f"[HF] Method 2 failed: {e2}, trying method 3...")
+                    # Method 3: Submit job
+                    job = client.submit(
+                        face_image_path,
+                        video_path,
+                        gender
+                    )
+                    result = job.result()
             
             elapsed = time.time() - start_time
             print(f"[HF] {model_name} completed in {elapsed:.2f}s")
@@ -146,8 +166,8 @@ class VideoFaceSwapProcessor:
                     output = replicate.run(
                         model_name,
                         input={
-                            "swap_image": f1,    # Face to swap
-                            "target_image": f2   # Video/image to swap into
+                            "swap_image": f1,      # Face to swap
+                            "target_video": f2     # Video to swap into
                         }
                     )
                     
@@ -163,7 +183,13 @@ class VideoFaceSwapProcessor:
                     return video_url, model_name
                     
                 except Exception as e:
-                    print(f"[Replicate] ❌ {model_name} failed: {e}")
+                    error_msg = str(e)
+                    try:
+                        if hasattr(e, 'detail'):
+                            error_msg = f"{error_msg} - {getattr(e, 'detail')}"
+                    except:
+                        pass
+                    print(f"[Replicate] ❌ {model_name} failed: {error_msg}")
                     continue
         
         raise Exception("All Replicate models failed")
