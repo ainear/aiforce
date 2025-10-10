@@ -25,9 +25,9 @@ class VideoFaceSwapProcessor:
         self.hf_models = []
         
         # Replicate Pro models (WORKING 2025) - AUDIO PRESERVED
-        # codeplugtech/face-swap: $0.0026/run, ~10s, AUDIO PRESERVED ✅
+        # arabyai-replicate/roop_face_swap: $0.11/run, ~77s, VIDEO face swap, AUDIO PRESERVED ✅
         self.replicate_models = [
-            "codeplugtech/face-swap",
+            "arabyai-replicate/roop_face_swap",
         ]
         
         # VModel.AI credentials
@@ -270,23 +270,26 @@ class VideoFaceSwapProcessor:
         video_temp.close()
         
         try:
-            # VModel API call
-            response = requests.post(
-                "https://api.vmodel.ai/api/tasks/v1/create",
-                headers={
-                    "Authorization": f"Bearer {self.vmodel_token}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "version": "537e83f7ed84751dc56aa80fb2391b07696c85a49967c72c64f002a0ca2bb224",
-                    "input": {
-                        "target": open(face_temp.name, 'rb'),
-                        "source": open(video_temp.name, 'rb'),
-                        "disable_safety_checker": True
-                    }
-                },
-                timeout=180  # 3 minutes timeout
-            )
+            # VModel API call with multipart/form-data
+            with open(face_temp.name, 'rb') as face_file, open(video_temp.name, 'rb') as video_file:
+                files = {
+                    'target': face_file,
+                    'source': video_file
+                }
+                data = {
+                    'version': '537e83f7ed84751dc56aa80fb2391b07696c85a49967c72c64f002a0ca2bb224',
+                    'disable_safety_checker': 'true'
+                }
+                
+                response = requests.post(
+                    "https://api.vmodel.ai/api/tasks/v1/create",
+                    headers={
+                        "Authorization": f"Bearer {self.vmodel_token}"
+                    },
+                    files=files,
+                    data=data,
+                    timeout=180  # 3 minutes timeout
+                )
             
             response.raise_for_status()
             result = response.json()
