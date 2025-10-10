@@ -24,11 +24,12 @@ class VideoFaceSwapProcessor:
         # Using Replicate as primary provider
         self.hf_models = []
         
-        # Replicate Pro models - DISABLED FOR VIDEO (image swap only)
-        # All Replicate models tested are for IMAGE face swap, not VIDEO
-        # yan-ops/face_swap: 105M+ runs but IMAGE only
-        # arabyai-replicate/roop_face_swap: 404 not found
-        self.replicate_models = []
+        # Replicate Pro models (WORKING 2025) - AUDIO PRESERVED ✅
+        # arabyai-replicate/roop_face_swap: $0.14/run, ~77s, VIDEO face swap with AUDIO
+        # Must use full version ID to avoid 404
+        self.replicate_models = [
+            "arabyai-replicate/roop_face_swap:11b6bf0f4e14d808f655e87e5448233cceff10a45f659d71539cafb7163b2e84"
+        ]
         
         # VModel.AI credentials
         self.vmodel_token = os.getenv('VMODEL_API_TOKEN', '')
@@ -183,12 +184,13 @@ class VideoFaceSwapProcessor:
                 print(f"[Replicate] Trying model: {model_name}")
                 
                 # Open files for Replicate
+                # Note: arabyai-replicate/roop_face_swap params are swap_image + target_video
                 with open(face_path, 'rb') as f1, open(video_path, 'rb') as f2:
                     output = replicate.run(
                         model_name,
                         input={
-                            "swap_image": f1,      # Face to swap
-                            "target_video": f2     # Video to swap into
+                            "swap_image": f1,      # Face to swap (source face)
+                            "target_video": f2     # Video to swap into (target video)
                         }
                     )
                 
@@ -372,8 +374,10 @@ class VideoFaceSwapProcessor:
         print(f"[VideoSwap] Starting with provider: {provider}")
         
         if provider == "replicate":
-            # Replicate disabled for video (image swap only)
-            raise Exception("Replicate video face swap disabled - all models are image-only. Use VModel instead.")
+            # Replicate only - arabyai-replicate/roop_face_swap with audio
+            print("[VideoSwap] Using Replicate (arabyai-replicate/roop_face_swap)")
+            result, model = self.swap_face_replicate(face_image, video_file)
+            return result, "replicate", model
         
         elif provider == "vmodel":
             # VModel only - premium quality with audio
@@ -382,11 +386,26 @@ class VideoFaceSwapProcessor:
             return result, "vmodel", model
         
         else:  # "auto" or any other value
-            # Auto mode: Use VModel (Replicate disabled for video)
-            print("[VideoSwap] Auto mode - Using VModel (Replicate disabled for video)")
+            # Auto mode: Replicate primary → VModel fallback
+            print("[VideoSwap] Auto mode - Replicate primary, VModel fallback")
             
-            if self.vmodel_token:
-                result, model = self.swap_face_vmodel(face_image, video_file)
-                return result, "vmodel", model
-            else:
-                raise Exception("VMODEL_API_TOKEN required for video face swap (Replicate disabled for video)")
+            try:
+                # Try Replicate first (stable, audio preserved)
+                result, model = self.swap_face_replicate(face_image, video_file)
+                return result, "replicate", model
+            
+            except Exception as replicate_error:
+                print(f"[VideoSwap] Replicate failed: {replicate_error}")
+                
+                # Fallback to VModel if available
+                if self.vmodel_token:
+                    print("[VideoSwap] Falling back to VModel...")
+                    try:
+                        result, model = self.swap_face_vmodel(face_image, video_file)
+                        return result, "vmodel (fallback)", model
+                    except Exception as vmodel_error:
+                        print(f"[VideoSwap] VModel fallback failed: {vmodel_error}")
+                        raise Exception(f"Both providers failed. Replicate: {replicate_error}, VModel: {vmodel_error}")
+                else:
+                    print("[VideoSwap] VModel not configured, cannot fallback")
+                    raise replicate_error

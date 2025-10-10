@@ -54,8 +54,8 @@ def video_face_swap():
         gender = request.form.get('gender', 'all')       # all, male, female
         
         # Validate provider
-        if provider not in ['auto', 'vmodel']:
-            return jsonify({'error': f'Invalid provider: {provider}. Use: auto or vmodel (replicate disabled)'}), 400
+        if provider not in ['auto', 'replicate', 'vmodel']:
+            return jsonify({'error': f'Invalid provider: {provider}. Use: auto, replicate, or vmodel'}), 400
         
         # Validate gender
         if gender not in ['all', 'male', 'female']:
@@ -153,14 +153,24 @@ def get_providers():
     return jsonify({
         'providers': {
             'auto': {
-                'name': 'Auto (VModel Only)',
-                'strategy': 'VModel.AI Premium',
-                'models': ['vmodel/video-face-swap-pro'],
-                'timeout': '15-30 seconds',
+                'name': 'Auto (Replicate → VModel)',
+                'strategy': 'Replicate primary → VModel fallback',
+                'models': ['arabyai-replicate/roop_face_swap', 'vmodel/video-face-swap-pro'],
+                'timeout': '15-77 seconds',
                 'audio_preserved': True,
-                'cost': '$0.03/second (~$0.10 per short video)',
-                'status': '✅ RECOMMENDED',
-                'note': 'Replicate disabled (image-only models)'
+                'cost': '$0.10-0.14 per video',
+                'status': '✅ RECOMMENDED'
+            },
+            'replicate': {
+                'name': 'Replicate (Stable)',
+                'models': [
+                    'arabyai-replicate/roop_face_swap'
+                ],
+                'timeout': '~77 seconds',
+                'audio_preserved': True,
+                'cost': '$0.14 per video',
+                'quality': 'Good, stable',
+                'status': '✅ WORKING 2025'
             },
             'vmodel': {
                 'name': 'VModel.AI (Premium)',
@@ -173,13 +183,6 @@ def get_providers():
                 'quality': 'Premium, commercial license',
                 'status': '✅ WORKING 2025',
                 'requirements': 'Requires Supabase (auto-uploads files)'
-            },
-            'replicate': {
-                'name': 'Replicate (Disabled)',
-                'status': '❌ DISABLED',
-                'reason': 'All Replicate models are IMAGE swap only, not VIDEO',
-                'tested_models': ['yan-ops/face_swap', 'arabyai-replicate/roop_face_swap'],
-                'note': 'Use VModel for video face swap'
             }
         },
         'supported_formats': {
@@ -187,10 +190,10 @@ def get_providers():
             'image': list(ALLOWED_IMAGE_EXTENSIONS)
         },
         'usage': {
-            'provider_auto': 'VModel.AI only (Replicate disabled for video)',
-            'provider_vmodel': 'VModel.AI - premium quality, requires Supabase',
-            'provider_replicate': 'DISABLED - image swap only',
-            'audio_note': '✅ VModel preserves original video audio!',
-            'important': 'All Replicate models tested are for IMAGE face swap, not VIDEO'
+            'provider_auto': 'Replicate primary ($0.14, stable) → VModel fallback ($0.10, premium)',
+            'provider_replicate': 'Replicate only - arabyai-replicate/roop_face_swap with audio',
+            'provider_vmodel': 'VModel.AI - premium quality, faster, requires Supabase',
+            'audio_note': '✅ Both providers preserve original video audio!',
+            'important': 'Audio is preserved by default in all providers'
         }
     })

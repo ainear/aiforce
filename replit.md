@@ -4,8 +4,8 @@
 This project is a Flask-based REST API providing AI-powered photo editing features for integration with Flutter mobile applications. It aims to offer serverless AI image processing capabilities, similar to Glam AI, utilizing models from Replicate and Hugging Face. Key features include face swapping, image upscaling, old photo restoration, cartoonify effects, style transfer, template-based transformations, and video face swapping. The project emphasizes robust error handling, automatic fallback mechanisms, and persistent image storage.
 
 ## User Preferences
-- **Primary**: VModel.AI - Premium quality, commercial license, audio preserved ✅
-- **Disabled**: Replicate API (all models are IMAGE swap only, not VIDEO)
+- **Primary**: Replicate API (arabyai-replicate/roop_face_swap) - Stable, audio preserved ✅
+- **Fallback**: VModel.AI - Premium quality, faster, commercial license, audio preserved ✅
 - **Disabled**: HuggingFace Pro (all models had compatibility issues)
 - Planning to integrate with Supabase for user data storage
 - Target platform: Flutter mobile app (Vietnamese user, builds APK locally in VS Code)
@@ -15,10 +15,9 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 
 ### Stack
 - **Backend Framework**: Flask (Python)
-- **Primary AI Provider**: VModel.AI (video-face-swap-pro)
-- **Disabled Providers**: 
-  - Replicate (all models are IMAGE swap only, not VIDEO)
-  - HuggingFace (compatibility issues with all video models)
+- **Primary AI Provider**: Replicate API (arabyai-replicate/roop_face_swap)
+- **Fallback AI Provider**: VModel.AI (video-face-swap-pro)
+- **Disabled Provider**: HuggingFace (compatibility issues with all video models)
 - **Image Storage**: Supabase Storage
 - **Image Processing**: Pillow (PIL), Replicate SDK
 - **CORS**: Flask-CORS
@@ -42,12 +41,12 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
     - `/api/templates/list`: Lists available face swap templates.
     - `/api/templates/face-swap`: Swaps user faces with templates.
 - **Video Face Swap** (✅ AUDIO PRESERVED):
-    - `/api/video/face-swap`: Video face swapping with VModel.AI:
-      - `auto`: VModel.AI (RECOMMENDED)
-      - `vmodel`: VModel.AI premium (~15-30s, commercial license)
+    - `/api/video/face-swap`: Video face swapping with 3 provider options:
+      - `auto`: Replicate primary → VModel fallback (RECOMMENDED)
+      - `replicate`: arabyai-replicate/roop_face_swap ($0.14, ~77s, stable)
+      - `vmodel`: VModel.AI premium ($0.10, 15-30s, faster)
     - `/api/video/providers`: Lists available video face swap providers and models.
-    - **VModel preserves original video audio!**
-    - **Note**: Replicate disabled (all models are IMAGE swap only)
+    - **All providers preserve original video audio!**
 - **Storage Integration**:
     - `/api/ai/process-and-save`: Processes images and optionally saves to Supabase Storage, returning a public URL.
 
@@ -57,10 +56,10 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 
 ### System Design
 - **Video Face Swap Architecture**:
-  - Primary provider: VModel.AI only
-  - Audio preservation: VModel keeps original video audio
+  - Auto mode: Replicate (stable, $0.14) → VModel (premium, $0.10) fallback
+  - Audio preservation: Both providers keep original video audio
+  - Replicate model: arabyai-replicate/roop_face_swap (must use version ID)
   - VModel: Premium quality with commercial license, requires Supabase
-  - Replicate: DISABLED (all models are IMAGE swap only, not VIDEO)
   - HuggingFace: DISABLED due to compatibility issues
 - Image storage is handled by Supabase Storage, ensuring persistent access via public URLs.
 - CORS is enabled to facilitate seamless integration with the Flutter mobile application.
@@ -70,19 +69,23 @@ This project is a Flask-based REST API providing AI-powered photo editing featur
 ## External Dependencies
 
 ### API Providers (Video Face Swap)
-- **VModel.AI** (PRIMARY):
+- **Replicate API** (PRIMARY): 
+  - Model: `arabyai-replicate/roop_face_swap:11b6bf0f4e14d808f655e87e5448233cceff10a45f659d71539cafb7163b2e84`
+  - Cost: $0.14 per video
+  - Speed: ~77 seconds
+  - Audio: ✅ Preserved
+  - Quality: Good, stable
+  - API Key: `REPLICATE_PRO_TOKEN`
+  - **Note:** Must use full version ID to avoid 404 errors
+  
+- **VModel.AI** (FALLBACK):
   - Model: `vmodel/video-face-swap-pro`
   - Cost: $0.03/second (~$0.10 per short video)
-  - Speed: ~15-30 seconds
+  - Speed: ~15-30 seconds (faster!)
   - Audio: ✅ Preserved
   - Quality: Premium, commercial license
   - API Key: `VMODEL_API_TOKEN`
   - **Note:** Requires Supabase (uploads files → gets URLs → calls VModel)
-
-- **Replicate** (DISABLED):
-  - All models tested are IMAGE swap only, not VIDEO
-  - Models tested: yan-ops/face_swap, arabyai-replicate/roop_face_swap
-  - Not suitable for video face swap
 
 - **HuggingFace** (DISABLED):
   - All models failed due to compatibility issues
