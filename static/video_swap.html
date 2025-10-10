@@ -318,7 +318,7 @@
     <div class="container">
         <div class="header">
             <h1>🎬 Video Face Swap Test</h1>
-            <p>Test HuggingFace Pro & Replicate Pro APIs</p>
+            <p>Replicate & VModel.AI - Audio Preserved ✅</p>
         </div>
 
         <div class="card">
@@ -348,24 +348,22 @@
                 <div class="option-group">
                     <label for="providerSelect">Provider</label>
                     <select id="providerSelect" onchange="updateProviderInfo()">
-                        <option value="auto">Auto (HF → Replicate)</option>
-                        <option value="huggingface">HuggingFace Pro</option>
-                        <option value="replicate">Replicate Pro</option>
+                        <option value="auto">Auto (Replicate → VModel)</option>
+                        <option value="replicate">Replicate (Fast & Cheap)</option>
+                        <option value="vmodel">VModel.AI (Premium)</option>
                     </select>
                     <div class="provider-info" id="providerInfo">
-                        Try HF first with 5-7s timeout, fallback to Replicate
+                        ✅ Replicate (fast, cheap, audio) → VModel fallback (premium)
                     </div>
                 </div>
 
                 <div class="option-group">
-                    <label for="genderSelect">Gender Filter</label>
-                    <select id="genderSelect">
-                        <option value="all">All Faces</option>
-                        <option value="male">Male Only</option>
-                        <option value="female">Female Only</option>
+                    <label for="genderSelect">Audio Status</label>
+                    <select id="genderSelect" disabled>
+                        <option value="all">✅ Audio Preserved</option>
                     </select>
                     <div class="provider-info">
-                        Gender filter works with HuggingFace provider
+                        All providers preserve original video audio!
                     </div>
                 </div>
             </div>
@@ -449,9 +447,9 @@
             const infoDiv = document.getElementById('providerInfo');
             
             const infos = {
-                'auto': 'Try HF first with 5-7s timeout, fallback to Replicate',
-                'huggingface': 'Multi-model fallback (tonyassi → yoshibomball123)',
-                'replicate': 'Stable & reliable (yan-ops, cdingram models)'
+                'auto': '✅ Replicate (fast, cheap, audio) → VModel fallback (premium)',
+                'replicate': '⚡ Fast & cheap ($0.0026/video) - Audio preserved ✅',
+                'vmodel': '💎 Premium quality - Commercial license - Audio preserved ✅'
             };
             
             infoDiv.textContent = infos[provider];
@@ -473,9 +471,9 @@
 
             // Get estimated time based on provider
             const estimatedTimes = {
-                'auto': { time: 90, msg: '~1-2 minutes (HuggingFace → Replicate fallback)' },
-                'huggingface': { time: 60, msg: '~30-60 seconds (CPU processing)' },
-                'replicate': { time: 90, msg: '~1-2 minutes (High quality GPU)' }
+                'auto': { time: 30, msg: '~10-30 seconds (Replicate → VModel fallback)' },
+                'replicate': { time: 15, msg: '~10-15 seconds (Fast GPU processing)' },
+                'vmodel': { time: 30, msg: '~15-30 seconds (Premium quality)' }
             };
             const estimate = estimatedTimes[provider] || estimatedTimes['auto'];
 
@@ -593,15 +591,17 @@
                 <div class="info-badge"><strong>Time:</strong> ${elapsed}s</div>
             `;
 
-            // Setup download
-            if (blob) {
-                downloadLink.href = videoUrl;
-                downloadLink.style.display = 'inline-block';
-            } else {
-                downloadLink.href = videoUrl;
+            // Setup download - always show download button
+            downloadLink.href = videoUrl;
+            downloadLink.download = 'face_swapped_video.mp4';
+            downloadLink.textContent = '📥 Download Video';
+            downloadLink.style.display = 'inline-block';
+            
+            // For blob URLs, use direct download
+            // For external URLs (Replicate/VModel), browser will handle download
+            if (!blob) {
+                // External URL - may open in new tab depending on CORS
                 downloadLink.target = '_blank';
-                downloadLink.textContent = '🔗 Open Video';
-                downloadLink.style.display = 'inline-block';
             }
 
             // Scroll to result
